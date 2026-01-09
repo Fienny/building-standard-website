@@ -1,0 +1,44 @@
+.navigation {
+  background-color: var(--white);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 16px 0;
+}
+
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo h2 {
+  color: var(--primary-color);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.logo:hover h2 {
+  color: var(--primary-dark);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--primary-color);
+}
+
+.nav-link.btn {
+  color: var(--white);
+}

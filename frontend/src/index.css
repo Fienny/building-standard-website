@@ -1,0 +1,118 @@
+:root {
+  /* Цветовая палитра */
+  --primary-color: #2c5f7d;
+  --primary-dark: #1e4259;
+  --primary-light: #3d7a9f;
+  --secondary-color: #f5f7fa;
+  --accent-color: #ff6b35;
+  --accent-hover: #e55a2b;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-light: #9ca3af;
+  --border-color: #e5e7eb;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --white: #ffffff;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
+  background-color: var(--white);
+  line-height: 1.6;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s ease;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Утилитарные классы */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-accent {
+  background-color: var(--accent-color);
+  color: var(--white);
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: #e9ecef;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mt-4 { margin-top: 32px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.mb-4 { margin-bottom: 32px; }
