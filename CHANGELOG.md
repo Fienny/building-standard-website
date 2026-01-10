@@ -5,6 +5,8 @@
 ## [Unreleased]
 
 ### Добавлено
+
+#### Frontend
 - Инициализация проекта React с использованием Vite
 - Настройка маршрутизации с использованием React Router
 - Создание навигационного компонента
@@ -16,28 +18,69 @@
 - Интеграция методов оплаты Click, PayMe и банковских карт (UI)
 - Адаптивный дизайн для мобильных устройств
 
+#### Backend
+- Backend API на Node.js + Express
+- Модели данных с использованием Sequelize ORM
+- JWT аутентификация пользователей
+- REST API endpoints для документов, пользователей и платежей
+- Middleware для авторизации и проверки ролей
+- Подготовка для интеграции платежных систем (Click, PayMe, банковские карты)
+- Healthcheck endpoints для мониторинга
+
+#### База данных
+- PostgreSQL 15 для хранения данных
+- Redis для кэширования и сессий
+- SQL скрипты инициализации с тестовыми данными
+- Индексы для оптимизации запросов
+- Триггеры для автоматического обновления timestamps
+
+#### Инфраструктура
+- Docker контейнеризация всех сервисов
+- Docker Compose для оркестрации
+- Nginx как reverse proxy
+- Конфигурация для развертывания на QNAP NAS
+- Подробное руководство по настройке QNAP (QNAP_SETUP_GUIDE.md)
+
 ### Технические детали
 - **Frontend**: React 18 + Vite
-- **Маршрутизация**: React Router DOM v6
-- **Стилизация**: CSS с использованием CSS-переменных
+- **Backend**: Node.js 18 + Express
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **ORM**: Sequelize
+- **Auth**: JWT
+- **Containerization**: Docker + Docker Compose
+- **Reverse Proxy**: Nginx
 - **Язык интерфейса**: Русский
 
 ### Структура проекта
 ```
-frontend/
-├── src/
-│   ├── components/      # Переиспользуемые компоненты
-│   │   └── Navigation/  # Навигационная панель
-│   ├── pages/           # Страницы приложения
-│   │   ├── Home         # Главная страница
-│   │   ├── Login        # Страница входа
-│   │   ├── Signup       # Страница регистрации
-│   │   ├── Documents    # Список документов
-│   │   └── DocumentPreview # Предпросмотр документа
-│   ├── styles/          # Глобальные стили
-│   ├── utils/           # Вспомогательные функции
-│   └── App.jsx          # Главный компонент приложения
-└── public/              # Статические файлы
+building-standard-website/
+├── frontend/              # React приложение
+│   ├── src/
+│   │   ├── components/   # Компоненты
+│   │   ├── pages/        # Страницы
+│   │   └── App.jsx
+│   └── package.json
+│
+├── backend/              # Node.js API
+│   ├── routes/          # API маршруты
+│   ├── models/          # Модели данных
+│   ├── middleware/      # Middleware функции
+│   ├── config/          # Конфигурация
+│   ├── server.js        # Главный файл
+│   ├── Dockerfile
+│   └── package.json
+│
+├── database/            # БД конфигурация
+│   └── init/           # SQL скрипты
+│
+├── nginx/              # Nginx конфигурация
+│   └── conf/
+│
+├── docker-compose.yml  # Оркестрация контейнеров
+├── QNAP_SETUP_GUIDE.md # Руководство по QNAP
+├── CHANGELOG.md
+└── README.md
 ```
 
 ## [0.1.0] - 2026-01-09
