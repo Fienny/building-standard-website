@@ -113,9 +113,12 @@ docker-compose up -d --build
 ### Платежи
 | Метод | URL | Описание |
 |-------|-----|----------|
-| POST | `/api/payments/create` | Создать платеж |
-| POST | `/api/payments/callback/<system>` | Webhook от Click/PayMe |
-| GET | `/api/payments/history` | История платежей |
+| POST | `/api/payments/create` | Создать платеж (вернет payment_url) |
+| POST | `/api/payments/callback/click` | Webhook от Click |
+| POST | `/api/payments/callback/payme` | Webhook от PayMe (JSON-RPC) |
+| POST | `/api/payments/callback/card` | Webhook от карточного агрегатора |
+| GET | `/api/payments/status/<id>` | Статус платежа |
+| GET | `/api/payments/history` | История платежей пользователя |
 
 ### Пользователь
 | Метод | URL | Описание |
@@ -141,7 +144,7 @@ building-standard-website/
 │   ├── app/
 │   │   ├── models/           # User, Document, Purchase, Payment
 │   │   ├── routes/           # auth, documents, payments, users
-│   │   └── services/         # file_service (PDF preview)
+│   │   └── services/         # file_service, click_service, payme_service, card_service
 │   ├── run.py                # Dev entry point
 │   ├── wsgi.py               # Gunicorn entry point
 │   ├── seed.py               # Seed data
@@ -149,10 +152,51 @@ building-standard-website/
 │   └── requirements.txt
 │
 ├── docker-compose.yml
-├── QNAP_SETUP_GUIDE.md       # Руководство по развертыванию на QNAP
+├── DROPLET_DEPLOYMENT.md     # Руководство по развертыванию на DigitalOcean
+├── PAYMENT_INTEGRATION.md    # Руководство по интеграции платежных систем
 ├── CHANGELOG.md
 └── README.md
 ```
+
+## Платежные системы
+
+Платформа поддерживает три метода оплаты:
+
+- **Click** - популярная платежная система в Узбекистане
+- **PayMe** - платежная система от Payme
+- **Банковские карты** - Uzcard/Humo через агрегатор (Apelsin, Payze, Octo и т.д.)
+
+### Настройка платежных систем
+
+1. Зарегистрируйтесь в выбранных платежных системах:
+   - Click: https://my.click.uz/
+   - PayMe: https://checkout.paycom.uz/
+   - Агрегатор для карт (например, Apelsin: https://apelsin.uz/)
+
+2. Получите API ключи и добавьте их в `.env`:
+
+```bash
+# Click
+CLICK_MERCHANT_ID=your_merchant_id
+CLICK_SERVICE_ID=your_service_id
+CLICK_SECRET_KEY=your_secret_key
+
+# PayMe
+PAYME_MERCHANT_ID=your_merchant_id
+PAYME_SECRET_KEY=your_secret_key
+
+# Card
+CARD_MERCHANT_ID=your_merchant_id
+CARD_SECRET_KEY=your_secret_key
+CARD_API_URL=https://api.your-aggregator.uz
+```
+
+3. Настройте webhook URL в личных кабинетах:
+   - Click: `https://yourdomain.uz/api/payments/callback/click`
+   - PayMe: `https://yourdomain.uz/api/payments/callback/payme`
+   - Card: `https://yourdomain.uz/api/payments/callback/card`
+
+**Подробное руководство**: [PAYMENT_INTEGRATION.md](./PAYMENT_INTEGRATION.md)
 
 ## Добавление документов
 

@@ -2,6 +2,99 @@
 
 Все важные изменения проекта будут документированы в этом файле.
 
+## [0.3.0] - 2026-02-19
+
+### Добавлено (Интеграция платежных систем)
+
+#### Платежные сервисы
+- **Click**: Полная интеграция с Click.uz
+  - Создание платежа через redirect метод
+  - Обработка prepare (action=0) и complete (action=1) callbacks
+  - Проверка подписи HMAC-SHA1
+  - Конфигурация: CLICK_MERCHANT_ID, CLICK_SERVICE_ID, CLICK_SECRET_KEY
+
+- **PayMe**: Полная интеграция с PayMe (Payme)
+  - Создание платежа через checkout URL
+  - JSON-RPC 2.0 протокол для callbacks
+  - Поддержка всех RPC методов:
+    - CheckPerformTransaction - проверка возможности оплаты
+    - CreateTransaction - создание транзакции (резервирование)
+    - PerformTransaction - выполнение транзакции (списание)
+    - CancelTransaction - отмена транзакции
+    - CheckTransaction - проверка статуса
+  - Управление состояниями транзакций (created, completed, cancelled)
+  - Конфигурация: PAYME_MERCHANT_ID, PAYME_SECRET_KEY
+
+- **Банковские карты**: Интеграция через агрегатор (Uzcard/Humo)
+  - Универсальная реализация для работы с различными агрегаторами
+  - Поддержка: Apelsin, Payze, Octo и др.
+  - Создание платежа через API агрегатора
+  - Проверка подписи HMAC-SHA256
+  - Обработка success/failed callbacks
+  - Возврат средств (refund) - полный и частичный
+  - Конфигурация: CARD_MERCHANT_ID, CARD_SECRET_KEY, CARD_API_URL
+
+#### Backend обновления
+- Обновлен `/api/payments/create`:
+  - Автоматический выбор сервиса по payment_method (click/payme/card)
+  - Создание платежа в платежной системе
+  - Возврат payment_url для редиректа пользователя
+  - Сохранение transaction_id и payment_url в БД
+
+- Новые webhook эндпоинты:
+  - `POST /api/payments/callback/click` - для Click (form data)
+  - `POST /api/payments/callback/payme` - для PayMe (JSON-RPC)
+  - `POST /api/payments/callback/card` - для карточного агрегатора (JSON)
+
+- Обработка callbacks:
+  - Валидация подписи от платежной системы
+  - Обновление статуса Purchase и Payment
+  - Сохранение callback_data для аудита
+  - Предотвращение дублирования платежей
+
+- Модель Payment:
+  - `payment_url` - URL для оплаты
+  - `transaction_id` - ID транзакции в платежной системе
+  - `callback_data` - JSON данные от платежной системы
+  - Поддержка статусов: pending, completed, failed, cancelled
+
+#### Конфигурация
+- Расширен `config.py` для платежных систем (9 новых параметров)
+- Обновлен `.env.example` с подробными комментариями и ссылками
+- Добавлена библиотека `requests==2.31.0` для HTTP запросов
+
+#### Документация
+- **PAYMENT_INTEGRATION.md** - полное руководство по интеграции (500+ строк):
+  - Регистрация в платежных системах
+  - Настройка webhook URL
+  - Получение API ключей
+  - Тестирование с тестовыми картами
+  - Примеры использования сервисов
+  - Описание протоколов (Click, PayMe JSON-RPC, Card API)
+  - Troubleshooting и решение типовых проблем
+  - Безопасность (проверка подписей, IP whitelist)
+  - Полезные ссылки на документацию
+
+- Обновлен README.md:
+  - Секция "Платежные системы" с кратким обзором
+  - Инструкции по настройке
+  - Обновлены API endpoints для платежей
+
+#### Файловая структура
+```
+backend/app/services/
+├── click_service.py    # Click integration
+├── payme_service.py    # PayMe JSON-RPC integration
+└── card_service.py     # Card aggregator integration
+```
+
+### Примечания
+- Сервисы готовы к использованию после получения API ключей
+- PayMe использует JSON-RPC 2.0 - требует специальной обработки
+- Card service - универсальный, требует адаптации под конкретного агрегатора
+- Все платежи логируются в БД для аудита
+- Поддержка тестовых и production режимов
+
 ## [0.2.0] - 2026-02-19
 
 ### Изменено (Backend: Node.js -> Flask)
