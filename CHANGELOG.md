@@ -9,6 +9,12 @@
 - **Создан** новый легковесный backend на Python Flask
 - Ценообразование: 1 страница = 1 000 сум (настраивается через `PRICE_PER_PAGE`)
 
+### Архитектура Production
+- **Backend**: DigitalOcean Droplet (Flask + PostgreSQL)
+- **Файлы**: QNAP NAS в офисе (статический IP)
+- **Подключение**: NFS mount от Droplet к QNAP для чтения PDF/Word
+- **Создан подробный гайд**: [DROPLET_DEPLOYMENT.md](./DROPLET_DEPLOYMENT.md) - 10 частей, 600+ строк
+
 #### Backend (Flask)
 - REST API на Flask с Flask-SQLAlchemy ORM
 - JWT аутентификация (flask-jwt-extended)
