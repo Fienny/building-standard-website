@@ -304,6 +304,35 @@
   font-size: 15px;
 }
 
+.preview-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: var(--secondary-color);
+  border-radius: 8px;
+  border: 2px dashed var(--border-color);
+  margin-bottom: 24px;
+}
+
+.preview-placeholder p {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.pdf-preview {
+  margin-bottom: 24px;
+}
+
+.payment-message {
+  background-color: var(--secondary-color);
+  color: var(--text-secondary);
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: center;
+  border-left: 4px solid var(--primary-color);
+}
+
 @media (max-width: 1024px) {
   .preview-content {
     grid-template-columns: 1fr;

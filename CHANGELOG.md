@@ -2,52 +2,51 @@
 
 Все важные изменения проекта будут документированы в этом файле.
 
-## [Unreleased]
+## [0.2.0] - 2026-02-19
 
-### Добавлено
+### Изменено (Backend: Node.js -> Flask)
+- **Удален** Node.js + Express backend
+- **Создан** новый легковесный backend на Python Flask
+- Ценообразование: 1 страница = 1 000 сум (настраивается через `PRICE_PER_PAGE`)
+
+#### Backend (Flask)
+- REST API на Flask с Flask-SQLAlchemy ORM
+- JWT аутентификация (flask-jwt-extended)
+- Эндпоинты:
+  - `POST /api/auth/register` и `/api/auth/login` - регистрация и вход
+  - `GET /api/documents` - список документов с поиском и фильтрацией
+  - `GET /api/documents/<id>` - детали документа + статус покупки
+  - `GET /api/documents/<id>/preview` - PDF превью (первые 2 страницы, PyMuPDF)
+  - `GET /api/documents/<id>/download` - скачивание полного документа (после оплаты)
+  - `POST /api/payments/create` - создание платежа
+  - `POST /api/payments/callback/<system>` - webhook для платежных систем
+  - `GET /api/users/purchases` - купленные документы пользователя
+- Модели: User, Document, Purchase, Payment
+- Сервис для вырезки первых 2 страниц PDF (PyMuPDF)
+- Seed-скрипт для начального наполнения БД (10 документов + админ)
+- Gunicorn для production, Dockerfile
 
 #### Frontend
-- Инициализация проекта React с использованием Vite
-- Настройка маршрутизации с использованием React Router
-- Создание навигационного компонента
-- Главная страница с информацией о сервисе
-- Страница списка документов с фильтрацией и поиском
-- Страница предпросмотра документа (2 страницы бесплатно)
-- Страницы входа и регистрации
-- Минималистичный дизайн с профессиональной цветовой палитрой
-- Интеграция методов оплаты Click, PayMe и банковских карт (UI)
-- Адаптивный дизайн для мобильных устройств
-
-#### Backend
-- Backend API на Node.js + Express
-- Модели данных с использованием Sequelize ORM
-- JWT аутентификация пользователей
-- REST API endpoints для документов, пользователей и платежей
-- Middleware для авторизации и проверки ролей
-- Подготовка для интеграции платежных систем (Click, PayMe, банковские карты)
-- Healthcheck endpoints для мониторинга
-
-#### База данных
-- PostgreSQL 15 для хранения данных
-- Redis для кэширования и сессий
-- SQL скрипты инициализации с тестовыми данными
-- Индексы для оптимизации запросов
-- Триггеры для автоматического обновления timestamps
+- Подключен к реальному API (вместо mock-данных)
+- AuthContext для управления состоянием аутентификации
+- Навигация показывает имя пользователя / кнопку выхода
+- Documents.jsx: загрузка документов и категорий с сервера
+- DocumentPreview.jsx: загрузка с API, отображение PDF превью через iframe
+- Login/Signup: реальная авторизация через API с обработкой ошибок
+- Vite proxy для проксирования `/api` на Flask (dev-режим)
 
 #### Инфраструктура
-- Docker контейнеризация всех сервисов
-- Docker Compose для оркестрации
-- Nginx как reverse proxy
-- Конфигурация для развертывания на QNAP NAS
-- Подробное руководство по настройке QNAP (QNAP_SETUP_GUIDE.md)
+- Обновлен docker-compose.yml под Flask (порт 5000)
+- Убран Redis (не нужен для легковесного бека)
+- PostgreSQL 15 для хранения данных
 
 ### Технические детали
 - **Frontend**: React 18 + Vite
-- **Backend**: Node.js 18 + Express
+- **Backend**: Python 3.12 + Flask + Gunicorn
 - **Database**: PostgreSQL 15
-- **Cache**: Redis 7
-- **ORM**: Sequelize
-- **Auth**: JWT
+- **ORM**: Flask-SQLAlchemy
+- **Auth**: JWT (flask-jwt-extended)
+- **PDF**: PyMuPDF (fitz)
 - **Containerization**: Docker + Docker Compose
 - **Reverse Proxy**: Nginx
 - **Язык интерфейса**: Русский
@@ -57,28 +56,25 @@
 building-standard-website/
 ├── frontend/              # React приложение
 │   ├── src/
-│   │   ├── components/   # Компоненты
+│   │   ├── components/   # Компоненты (Navigation)
 │   │   ├── pages/        # Страницы
+│   │   ├── utils/        # API helper, AuthContext
 │   │   └── App.jsx
 │   └── package.json
 │
-├── backend/              # Node.js API
-│   ├── routes/          # API маршруты
-│   ├── models/          # Модели данных
-│   ├── middleware/      # Middleware функции
-│   ├── config/          # Конфигурация
-│   ├── server.js        # Главный файл
+├── backend/              # Flask API
+│   ├── app/
+│   │   ├── models/      # SQLAlchemy модели
+│   │   ├── routes/      # API эндпоинты
+│   │   └── services/    # Сервис работы с PDF
+│   ├── run.py           # Dev entry point
+│   ├── wsgi.py          # Production entry point (gunicorn)
+│   ├── seed.py          # Наполнение БД начальными данными
 │   ├── Dockerfile
-│   └── package.json
+│   └── requirements.txt
 │
-├── database/            # БД конфигурация
-│   └── init/           # SQL скрипты
-│
-├── nginx/              # Nginx конфигурация
-│   └── conf/
-│
-├── docker-compose.yml  # Оркестрация контейнеров
-├── QNAP_SETUP_GUIDE.md # Руководство по QNAP
+├── docker-compose.yml   # Оркестрация контейнеров
+├── QNAP_SETUP_GUIDE.md
 ├── CHANGELOG.md
 └── README.md
 ```

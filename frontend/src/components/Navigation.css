@@ -42,3 +42,9 @@
 .nav-link.btn {
   color: var(--white);
 }
+
+.nav-user {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+}

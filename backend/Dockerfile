@@ -1,36 +1,21 @@
-FROM node:18-alpine
+FROM python:3.12-slim
 
-# Установка рабочей директории
 WORKDIR /app
 
-# Копирование package.json и package-lock.json
-COPY package*.json ./
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Установка зависимостей
-RUN npm ci --only=production && \
-    npm cache clean --force
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование исходного кода
 COPY . .
 
-# Создание директорий для uploads и logs
-RUN mkdir -p uploads logs && \
-    chmod -R 755 uploads logs
+RUN mkdir -p uploads/documents logs
 
-# Создание пользователя без привилегий
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+EXPOSE 5000
 
-# Переключение на непривилегированного пользователя
-USER nodejs
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"
 
-# Порт приложения
-EXPOSE 3000
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Запуск приложения
-CMD ["node", "server.js"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "wsgi:app"]
