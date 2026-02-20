@@ -1,48 +1,73 @@
 # Платформа Государственных Стандартов РУз
 
-Веб-платформа для продажи государственных стандартов Республики Узбекистан, переведенных на русский язык.
-
-## Описание проекта
+Веб-платформа для продажи государственных строительных стандартов Республики Узбекистан, переведённых на русский язык.
 
 Клиенты могут бесплатно просмотреть первые 2 страницы любого документа, а после оплаты получают полный доступ. Цена рассчитывается автоматически: **1 страница = 1 000 сум**.
 
-### Архитектура
+---
 
-- **Backend**: развернут на DigitalOcean Droplet
-- **Database**: PostgreSQL на том же Droplet
-- **Файлы**: хранятся на QNAP NAS в офисе (статический IP)
-- **Подключение**: Droplet монтирует QNAP через NFS для чтения PDF/Word
+## Архитектура
 
 ```
-DigitalOcean Droplet          Офис (QNAP NAS)
-┌─────────────────┐           ┌──────────────┐
-│ Nginx + Flask   │           │   PDF/Word   │
-│ + PostgreSQL    │◄─── NFS ──┤   документы  │
-└─────────────────┘           └──────────────┘
+  Пользователь (браузер)
+        │
+        ▼
+┌─────────────────────────────────────────────────┐
+│             DigitalOcean Droplet                │
+│                                                 │
+│   Nginx :80/:443                                │
+│     ├── /           → React SPA (статика)       │
+│     └── /api/*      → Flask :5000               │
+│                                                 │
+│   Flask API                                     │
+│     ├── JWT аутентификация                      │
+│     ├── Каталог документов                      │
+│     ├── PDF-превью (PyMuPDF)                    │
+│     └── Платежи (Click, PayMe, Uzcard/Humo)     │
+│                                                 │
+│   PostgreSQL :5432                              │
+│     └── users, documents, purchases, payments   │
+│                                                 │
+│   /mnt/qnap-documents ◄── NFS mount            │
+└────────────────────────────┬────────────────────┘
+                             │
+                         NFS (TCP)
+                             │
+                    ┌────────┴────────┐
+                    │  Офис (QNAP NAS)│
+                    │  TS-433          │
+                    │  PDF/Word файлы  │
+                    │  Статический IP  │
+                    └─────────────────┘
 ```
+
+---
 
 ## Технологический стек
 
-| Компонент | Технология |
-|-----------|-----------|
-| Frontend | React 18 + Vite |
-| Backend | Python 3.12 + Flask |
-| Database | PostgreSQL 15 |
-| ORM | Flask-SQLAlchemy |
-| Auth | JWT (flask-jwt-extended) |
-| PDF | PyMuPDF (превью первых 2 страниц) |
-| Deploy | Docker Compose + Nginx |
-| Server | QNAP NAS TS-433 |
-| Оплата | Click, PayMe, банковские карты |
+| Компонент   | Технология                                 |
+|-------------|--------------------------------------------|
+| Frontend    | React 19 + Vite 7 + React Router 7         |
+| Backend     | Python 3.12 + Flask 3.1 + Gunicorn         |
+| Database    | PostgreSQL 15                               |
+| ORM         | Flask-SQLAlchemy 3.1                        |
+| Auth        | JWT (flask-jwt-extended)                    |
+| PDF-превью  | PyMuPDF (извлечение первых 2 страниц)      |
+| Оплата      | Click, PayMe, банковские карты (Uzcard/Humo)|
+| Deploy      | Docker Compose + Nginx                      |
+| Файлы       | QNAP NAS TS-433 через NFS                  |
 
-## Быстрый старт
+---
+
+## Быстрый старт (development)
 
 ### Требования
+
 - Node.js 18+
 - Python 3.10+
 - PostgreSQL 15+
 
-### 1. Frontend (dev-режим)
+### 1. Frontend
 
 ```bash
 cd frontend
@@ -50,169 +75,244 @@ npm install
 npm run dev
 ```
 
-Откроется на `http://localhost:5173`. Запросы к `/api` проксируются на Flask.
+Откроется на `http://localhost:5173`. Запросы `/api/*` проксируются на Flask через Vite.
 
-### 2. Backend (dev-режим)
+### 2. Backend
 
 ```bash
 cd backend
 
-# Создайте виртуальное окружение
+# Виртуальное окружение
 python -m venv venv
 source venv/bin/activate   # Linux/Mac
 # venv\Scripts\activate    # Windows
 
-# Установите зависимости
+# Зависимости
 pip install -r requirements.txt
 
-# Создайте файл .env (скопируйте из примера и отредактируйте)
+# Конфигурация
 cp .env.example .env
+# Отредактируйте .env — укажите данные БД и ключи платёжных систем
 
-# Запустите сервер
+# Запуск
 python run.py
 ```
 
 Backend запустится на `http://localhost:5000`.
 
-### 3. Инициализация базы данных
+### 3. Инициализация БД
 
 ```bash
 cd backend
 python seed.py
 ```
 
-Создаст таблицы, добавит 10 тестовых документов и администратора:
-- **Админ**: `admin@standards.uz` / `admin123`
+Создаст таблицы и добавит 10 тестовых документов + администратора:
 
-### 4. Docker Compose (production)
+- **Логин**: `admin@standards.uz`
+- **Пароль**: `admin123`
+
+### 4. Docker Compose
 
 ```bash
 docker-compose up -d --build
 ```
 
-Запустит PostgreSQL, Flask backend и Nginx. Сайт будет доступен на порту 80.
+Поднимет PostgreSQL, Flask backend и Nginx. Сайт доступен на порту 80.
 
-## API эндпоинты
+---
+
+## API
 
 ### Аутентификация
-| Метод | URL | Описание |
-|-------|-----|----------|
-| POST | `/api/auth/register` | Регистрация |
-| POST | `/api/auth/login` | Вход |
-| GET | `/api/auth/me` | Текущий пользователь |
+
+| Метод | URL                  | Описание              |
+|-------|----------------------|-----------------------|
+| POST  | `/api/auth/register` | Регистрация           |
+| POST  | `/api/auth/login`    | Вход                  |
+| GET   | `/api/auth/me`       | Текущий пользователь  |
 
 ### Документы
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | `/api/documents` | Список документов (?search=, ?category=) |
-| GET | `/api/documents/categories` | Список категорий |
-| GET | `/api/documents/<id>` | Детали документа |
-| GET | `/api/documents/<id>/preview` | PDF первых 2 страниц |
-| GET | `/api/documents/<id>/download` | Скачать полный документ (после оплаты) |
+
+| Метод | URL                             | Описание                              |
+|-------|---------------------------------|---------------------------------------|
+| GET   | `/api/documents`                | Список (?search=, ?category=, ?page=) |
+| GET   | `/api/documents/categories`     | Список категорий                      |
+| GET   | `/api/documents/<id>`           | Детали документа                      |
+| GET   | `/api/documents/<id>/preview`   | PDF первых 2 страниц                  |
+| GET   | `/api/documents/<id>/download`  | Полный документ (после оплаты)        |
 
 ### Платежи
-| Метод | URL | Описание |
-|-------|-----|----------|
-| POST | `/api/payments/create` | Создать платеж (вернет payment_url) |
-| POST | `/api/payments/callback/click` | Webhook от Click |
-| POST | `/api/payments/callback/payme` | Webhook от PayMe (JSON-RPC) |
-| POST | `/api/payments/callback/card` | Webhook от карточного агрегатора |
-| GET | `/api/payments/status/<id>` | Статус платежа |
-| GET | `/api/payments/history` | История платежей пользователя |
+
+| Метод | URL                                | Описание                     |
+|-------|------------------------------------|------------------------------|
+| POST  | `/api/payments/create`             | Создать платёж → payment_url |
+| POST  | `/api/payments/callback/click`     | Webhook Click                |
+| POST  | `/api/payments/callback/payme`     | Webhook PayMe (JSON-RPC)     |
+| POST  | `/api/payments/callback/card`      | Webhook карточный агрегатор  |
+| GET   | `/api/payments/status/<id>`        | Статус платежа               |
+| GET   | `/api/payments/history`            | История платежей             |
 
 ### Пользователь
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | `/api/users/profile` | Профиль |
-| PUT | `/api/users/profile` | Обновить профиль |
-| PUT | `/api/users/password` | Сменить пароль |
-| GET | `/api/users/purchases` | Купленные документы |
+
+| Метод | URL                    | Описание             |
+|-------|------------------------|----------------------|
+| GET   | `/api/users/profile`   | Профиль              |
+| PUT   | `/api/users/profile`   | Обновить профиль     |
+| PUT   | `/api/users/password`  | Сменить пароль       |
+| GET   | `/api/users/purchases` | Купленные документы  |
+
+---
+
+## Платёжные системы
+
+| Метод            | Протокол      | Webhook URL                          |
+|------------------|---------------|--------------------------------------|
+| **Click**        | HMAC-SHA1     | `/api/payments/callback/click`       |
+| **PayMe**        | JSON-RPC 2.0  | `/api/payments/callback/payme`       |
+| **Uzcard/Humo**  | HMAC-SHA256   | `/api/payments/callback/card`        |
+
+### Настройка
+
+1. Зарегистрируйтесь в платёжных системах:
+   - Click — https://my.click.uz/
+   - PayMe — https://checkout.paycom.uz/
+   - Агрегатор для карт (Apelsin, Payze, Octo и др.)
+
+2. Добавьте ключи в `backend/.env`:
+
+```env
+CLICK_MERCHANT_ID=...
+CLICK_SERVICE_ID=...
+CLICK_SECRET_KEY=...
+
+PAYME_MERCHANT_ID=...
+PAYME_SECRET_KEY=...
+
+CARD_MERCHANT_ID=...
+CARD_SECRET_KEY=...
+CARD_API_URL=https://api.your-aggregator.uz
+```
+
+3. Укажите webhook URL в личных кабинетах платёжных систем
+
+Подробнее: **[PAYMENT_INTEGRATION.md](./PAYMENT_INTEGRATION.md)**
+
+---
 
 ## Структура проекта
 
 ```
 building-standard-website/
-├── frontend/                  # React приложение
+│
+├── frontend/                          # React SPA
 │   ├── src/
-│   │   ├── components/       # Navigation
-│   │   ├── pages/            # Home, Documents, DocumentPreview, Login, Signup
-│   │   └── utils/            # api.js, AuthContext.jsx
-│   ├── vite.config.js        # Proxy /api -> localhost:5000
+│   │   ├── components/
+│   │   │   ├── Navigation.jsx         # Навигация
+│   │   │   └── Navigation.css
+│   │   ├── pages/
+│   │   │   ├── Home.jsx               # Главная страница
+│   │   │   ├── Documents.jsx          # Каталог документов
+│   │   │   ├── DocumentPreview.jsx    # Превью + покупка
+│   │   │   ├── Login.jsx              # Вход
+│   │   │   └── Signup.jsx             # Регистрация
+│   │   ├── utils/
+│   │   │   ├── api.js                 # HTTP-клиент с JWT
+│   │   │   └── AuthContext.jsx        # React Context авторизации
+│   │   ├── App.jsx                    # Роутинг
+│   │   └── main.jsx                   # Точка входа
+│   ├── vite.config.js                 # Dev proxy /api → :5000
 │   └── package.json
 │
-├── backend/                   # Flask API
+├── backend/                           # Flask API
 │   ├── app/
-│   │   ├── models/           # User, Document, Purchase, Payment
-│   │   ├── routes/           # auth, documents, payments, users
-│   │   └── services/         # file_service, click_service, payme_service, card_service
-│   ├── run.py                # Dev entry point
-│   ├── wsgi.py               # Gunicorn entry point
-│   ├── seed.py               # Seed data
+│   │   ├── __init__.py                # App factory
+│   │   ├── config.py                  # Конфигурация (env vars)
+│   │   ├── models/
+│   │   │   ├── user.py                # Пользователь
+│   │   │   ├── document.py            # Документ + динамическая цена
+│   │   │   ├── purchase.py            # Покупка
+│   │   │   └── payment.py             # Платёж
+│   │   ├── routes/
+│   │   │   ├── auth.py                # Регистрация, вход
+│   │   │   ├── documents.py           # Каталог, превью, скачивание
+│   │   │   ├── payments.py            # Платежи, webhooks
+│   │   │   └── users.py               # Профиль, покупки
+│   │   └── services/
+│   │       ├── file_service.py        # PDF-превью (PyMuPDF)
+│   │       ├── click_service.py       # Click
+│   │       ├── payme_service.py       # PayMe (JSON-RPC)
+│   │       └── card_service.py        # Uzcard/Humo
+│   ├── run.py                         # Dev-сервер
+│   ├── wsgi.py                        # Gunicorn entry point
+│   ├── seed.py                        # Тестовые данные
 │   ├── Dockerfile
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── .env.example
 │
-├── docker-compose.yml
-├── DROPLET_DEPLOYMENT.md     # Руководство по развертыванию на DigitalOcean
-├── PAYMENT_INTEGRATION.md    # Руководство по интеграции платежных систем
-├── CHANGELOG.md
+├── docker-compose.yml                 # PostgreSQL + Flask + Nginx
+├── DROPLET_DEPLOYMENT.md              # Деплой на DigitalOcean + QNAP NFS
+├── PAYMENT_INTEGRATION.md             # Интеграция платёжных систем
+├── QNAP_SETUP_GUIDE.md               # Настройка QNAP NAS
+├── CHANGELOG.md                       # История изменений
 └── README.md
 ```
 
-## Платежные системы
-
-Платформа поддерживает три метода оплаты:
-
-- **Click** - популярная платежная система в Узбекистане
-- **PayMe** - платежная система от Payme
-- **Банковские карты** - Uzcard/Humo через агрегатор (Apelsin, Payze, Octo и т.д.)
-
-### Настройка платежных систем
-
-1. Зарегистрируйтесь в выбранных платежных системах:
-   - Click: https://my.click.uz/
-   - PayMe: https://checkout.paycom.uz/
-   - Агрегатор для карт (например, Apelsin: https://apelsin.uz/)
-
-2. Получите API ключи и добавьте их в `.env`:
-
-```bash
-# Click
-CLICK_MERCHANT_ID=your_merchant_id
-CLICK_SERVICE_ID=your_service_id
-CLICK_SECRET_KEY=your_secret_key
-
-# PayMe
-PAYME_MERCHANT_ID=your_merchant_id
-PAYME_SECRET_KEY=your_secret_key
-
-# Card
-CARD_MERCHANT_ID=your_merchant_id
-CARD_SECRET_KEY=your_secret_key
-CARD_API_URL=https://api.your-aggregator.uz
-```
-
-3. Настройте webhook URL в личных кабинетах:
-   - Click: `https://yourdomain.uz/api/payments/callback/click`
-   - PayMe: `https://yourdomain.uz/api/payments/callback/payme`
-   - Card: `https://yourdomain.uz/api/payments/callback/card`
-
-**Подробное руководство**: [PAYMENT_INTEGRATION.md](./PAYMENT_INTEGRATION.md)
+---
 
 ## Добавление документов
 
-1. Положите PDF файл на QNAP в папку `standards-documents`
-2. Обновите запись в БД, указав `file_path` (имя файла)
-3. Превью (первые 2 страницы) генерируется автоматически при запросе
+1. Загрузите PDF/Word файл на QNAP в папку `standards-documents`
+2. Добавьте запись в БД с указанием `file_path` (имя файла)
+3. Превью первых 2 страниц генерируется автоматически при запросе
 
-## Развертывание на Production
+---
 
-**Backend**: DigitalOcean Droplet + NFS подключение к QNAP
+## Развёртывание на Production
 
-Подробное руководство: [DROPLET_DEPLOYMENT.md](./DROPLET_DEPLOYMENT.md)
+**Сервер**: DigitalOcean Droplet + NFS-подключение к QNAP NAS в офисе.
 
-Краткая последовательность:
-1. Настроить QNAP NFS экспорт
+Подробное руководство: **[DROPLET_DEPLOYMENT.md](./DROPLET_DEPLOYMENT.md)**
+
+Краткий план:
+
+1. Настроить NFS-экспорт на QNAP
 2. Создать Droplet на DigitalOcean
-3. Смонтировать QNAP через NFS
+3. Смонтировать QNAP через NFS (`/mnt/qnap-documents`)
 4. Развернуть приложение через Docker Compose
-5. Настроить SSL и домен
+5. Настроить SSL (Let's Encrypt) и домен
+
+---
+
+## Переменные окружения
+
+| Переменная           | Описание                         | По умолчанию                |
+|----------------------|----------------------------------|-----------------------------|
+| `SECRET_KEY`         | Секрет Flask                     | `dev-secret-key`            |
+| `JWT_SECRET_KEY`     | Секрет JWT                       | `dev-jwt-secret`            |
+| `DATABASE_URL`       | PostgreSQL connection string     | `postgresql://...localhost` |
+| `UPLOAD_FOLDER`      | Путь к файлам документов         | `uploads/documents`         |
+| `PRICE_PER_PAGE`     | Цена за страницу (сум)           | `1000`                      |
+| `FRONTEND_URL`       | URL фронтенда (CORS)            | `http://localhost:5173`     |
+| `CLICK_MERCHANT_ID`  | Click Merchant ID                | —                           |
+| `CLICK_SERVICE_ID`   | Click Service ID                 | —                           |
+| `CLICK_SECRET_KEY`   | Click Secret Key                 | —                           |
+| `PAYME_MERCHANT_ID`  | PayMe Merchant ID                | —                           |
+| `PAYME_SECRET_KEY`   | PayMe Secret Key                 | —                           |
+| `CARD_MERCHANT_ID`   | Card Merchant ID                 | —                           |
+| `CARD_SECRET_KEY`    | Card Secret Key                  | —                           |
+| `CARD_API_URL`       | Card aggregator API URL          | —                           |
+
+Все переменные задаются в `backend/.env` (пример: `backend/.env.example`).
+
+---
+
+## Документация
+
+| Файл                                                    | Описание                                |
+|---------------------------------------------------------|-----------------------------------------|
+| [README.md](./README.md)                               | Общее описание проекта                  |
+| [DROPLET_DEPLOYMENT.md](./DROPLET_DEPLOYMENT.md)       | Деплой на DigitalOcean + QNAP (10 частей)|
+| [PAYMENT_INTEGRATION.md](./PAYMENT_INTEGRATION.md)     | Интеграция Click, PayMe, карт           |
+| [QNAP_SETUP_GUIDE.md](./QNAP_SETUP_GUIDE.md)         | Настройка QNAP NAS                     |
+| [CHANGELOG.md](./CHANGELOG.md)                         | История изменений                       |
