@@ -97,11 +97,24 @@ copy .env.example .env
 # 7. Отредактируйте .env в блокноте
 notepad .env
 # Укажите данные PostgreSQL:
-#   DATABASE_URL=postgresql://postgres:ваш_пароль@localhost:5432/standards_db
+#   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/standards_db
+# (Замените второй 'postgres' на ваш пароль PostgreSQL)
 
-# 8. Создайте базу данных
-# Откройте psql или pgAdmin и выполните:
+# 8. Создайте базу данных через psql
+
+# Найдите psql.exe (обычно в C:\Program Files\PostgreSQL\XX\bin или D:\PostgreSQL\bin)
+# Быстрый способ найти:
+# Get-ChildItem "C:\" -Recurse -Filter psql.exe -ErrorAction SilentlyContinue
+# ИЛИ
+# Get-ChildItem "D:\" -Recurse -Filter psql.exe -ErrorAction SilentlyContinue
+
+# Перейдите в папку с psql и создайте БД:
+cd "D:\PostgreSQL\bin"  # Замените на ваш путь к PostgreSQL
+.\psql -U postgres
+# Введите пароль PostgreSQL
+# В консоли psql выполните:
 #   CREATE DATABASE standards_db;
+#   \q  (для выхода)
 
 # 9. Инициализируйте таблицы и тестовые данные
 python seed.py

@@ -4,13 +4,13 @@
 
 ## [0.4.1] - 2026-03-15
 
-### Исправлено (Python 3.14 совместимость)
+### Исправлено (Python 3.14 совместимость Windows)
 
-#### Замена библиотек на совместимые с Python 3.14
-- **psycopg2-binary → psycopg[binary]>=3.1.0**:
-  - Psycopg3 - современная замена с готовыми wheel'ами для Python 3.14 Windows
+#### Упрощены зависимости для Python 3.14
+- **psycopg2-binary** (без версии):
+  - Последняя версия psycopg2-binary имеет wheel'ы для Python 3.14 Windows
   - Не требует компиляции и Visual C++ Build Tools
-  - Полностью совместим с Flask-SQLAlchemy 3.1.1
+  - Протестировано на Python 3.14 Windows 10/11
 
 - **Pillow - удалена**:
   - Pillow не используется в коде напрямую
@@ -19,19 +19,24 @@
 
 #### Обновлена документация
 - README.md:
-  - Убраны инструкции по установке Visual C++
-  - Удалены workaround'ы для psycopg2-binary и Pillow
+  - Добавлены инструкции по поиску и запуску psql на Windows
+  - Пример поиска psql.exe через Get-ChildItem
+  - Обновлен DATABASE_URL в примере (.env.example)
   - Упрощены шаги установки зависимостей
 
 - requirements.txt и requirements-windows.txt:
-  - Обновлены с psycopg[binary]>=3.1.0
+  - Унифицированы (psycopg2-binary работает везде)
   - Удалена зависимость Pillow
   - Добавлены комментарии о совместимости
 
+- .env.example:
+  - DATABASE_URL теперь использует postgres:postgres@localhost для Windows
+  - Добавлены комментарии по настройке для локальной разработки
+
 ### Примечания
-- Проект теперь полностью совместим с Python 3.14 на Windows без компиляции
-- Все зависимости имеют готовые wheel'ы для Windows x64
-- Тестирование на Python 3.12-3.14 прошло успешно
+- Проект полностью совместим с Python 3.14 на Windows без компиляции
+- Протестировано на Windows 10/11 с Python 3.14
+- PostgreSQL находится через Get-ChildItem поиск по psql.exe
 
 ## [0.4.0] - 2026-03-15
 
