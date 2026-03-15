@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
+import AIAssistant from '../components/AIAssistant';
 import './Home.css';
 
 function Home() {
   return (
     <div className="home">
+      <AIAssistant />
       <section className="hero">
         <div className="container">
           <div className="hero-content">

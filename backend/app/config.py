@@ -32,3 +32,6 @@ class Config:
     CARD_MERCHANT_ID = os.getenv("CARD_MERCHANT_ID")
     CARD_SECRET_KEY = os.getenv("CARD_SECRET_KEY")
     CARD_API_URL = os.getenv("CARD_API_URL")  # e.g., https://api.apelsin.uz
+
+    # AI Assistant backend URL (Django service)
+    AI_BACKEND_URL = os.getenv("AI_BACKEND_URL", "http://localhost:8000")

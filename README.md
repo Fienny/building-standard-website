@@ -48,77 +48,135 @@
 | Компонент   | Технология                                 |
 |-------------|--------------------------------------------|
 | Frontend    | React 19 + Vite 7 + React Router 7         |
-| Backend     | Python 3.12 + Flask 3.1 + Gunicorn         |
+| Backend     | Python 3.12+ + Flask 3.1 + Gunicorn        |
+| AI Backend  | Django 6.0 + DeepSeek AI + RAG             |
 | Database    | PostgreSQL 15                               |
 | ORM         | Flask-SQLAlchemy 3.1                        |
 | Auth        | JWT (flask-jwt-extended)                    |
 | PDF-превью  | PyMuPDF (извлечение первых 2 страниц)      |
 | Оплата      | Click, PayMe, банковские карты (Uzcard/Humo)|
+| AI-помощник | DeepSeek, Sentence-Transformers, Qdrant    |
 | Deploy      | Docker Compose + Nginx                      |
 | Файлы       | QNAP NAS TS-433 через NFS                  |
 
 ---
 
-## Быстрый старт (development)
+## Быстрый старт (Windows)
 
 ### Требования
 
-- Node.js 18+
-- Python 3.10+
-- PostgreSQL 15+
+- **Node.js 18+** — https://nodejs.org/
+- **Python 3.12+** (рекомендуется 3.14) — https://www.python.org/downloads/
+- **PostgreSQL 15+** — https://www.postgresql.org/download/windows/
 
-### 1. Frontend
+---
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Запуск проекта (2 терминала)
 
-Откроется на `http://localhost:5173`. Запросы `/api/*` проксируются на Flask через Vite.
+#### Терминал 1: Flask Backend (порт 5000)
 
-### 2. Backend
-
-```bash
+```powershell
+# 1. Откройте PowerShell в папке проекта
 cd backend
 
-# Виртуальное окружение
+# 2. Создайте виртуальное окружение
 python -m venv venv
-source venv/bin/activate   # Linux/Mac
-# venv\Scripts\activate    # Windows
 
-# Зависимости
+# 3. Активируйте виртуальное окружение
+.\venv\Scripts\Activate.ps1
+
+# 4. Установите зависимости
 pip install -r requirements.txt
 
-# Конфигурация
-cp .env.example .env
-# Отредактируйте .env — укажите данные БД и ключи платёжных систем
+# 5. Создайте файл .env (скопируйте из примера)
+copy .env.example .env
 
-# Запуск
+# 6. Отредактируйте .env в блокноте
+notepad .env
+# Укажите данные PostgreSQL:
+#   DATABASE_URL=postgresql://postgres:ваш_пароль@localhost:5432/standards_db
+
+# 7. Создайте базу данных
+# Откройте psql или pgAdmin и выполните:
+#   CREATE DATABASE standards_db;
+
+# 8. Инициализируйте таблицы и тестовые данные
+python seed.py
+
+# 9. Запустите Flask backend
 python run.py
 ```
 
-Backend запустится на `http://localhost:5000`.
+**Flask запустится на http://localhost:5000**
 
-### 3. Инициализация БД
-
-```bash
-cd backend
-python seed.py
-```
-
-Создаст таблицы и добавит 10 тестовых документов + администратора:
-
-- **Логин**: `admin@standards.uz`
+Тестовый админ:
+- **Email**: `admin@standards.uz`
 - **Пароль**: `admin123`
 
-### 4. Docker Compose
+---
 
-```bash
-docker-compose up -d --build
+#### Терминал 2: React Frontend (порт 5173)
+
+```powershell
+# 1. Откройте ВТОРОЙ PowerShell в папке проекта
+cd frontend
+
+# 2. Установите зависимости (только первый раз)
+npm install
+
+# 3. Запустите dev-сервер
+npm run dev
 ```
 
-Поднимет PostgreSQL, Flask backend и Nginx. Сайт доступен на порту 80.
+**Frontend откроется на http://localhost:5173**
+
+Запросы `/api/*` автоматически проксируются на Flask backend.
+
+---
+
+#### (Опционально) Терминал 3: AI-помощник (порт 8000)
+
+Для работы AI-помощника на главной странице:
+
+```powershell
+# 1. Откройте ТРЕТИЙ PowerShell
+cd AI-ready-project\shnq_ai_backend
+
+# 2. Создайте виртуальное окружение
+python -m venv venv
+
+# 3. Активируйте
+.\venv\Scripts\Activate.ps1
+
+# 4. Установите зависимости Django
+pip install django djangorestframework django-cors-headers openai python-dotenv
+
+# 5. Настройте DeepSeek API (нужен ключ)
+$env:DEEPSEEK_API_KEY="ваш_api_ключ"
+$env:DEEPSEEK_BASE_URL="https://api.deepseek.com"
+
+# 6. Примените миграции
+python manage.py migrate
+
+# 7. Запустите Django backend
+python manage.py runserver
+```
+
+**Django AI backend запустится на http://localhost:8000**
+
+> **Примечание**: AI-помощник работает только при запущенном Django backend. Если он не нужен, можно не запускать.
+
+---
+
+### Готово!
+
+Откройте http://localhost:5173 в браузере. На главной странице появится кнопка 🤖 AI-помощника (если Django запущен).
+
+---
+
+### Остановка серверов
+
+Нажмите `Ctrl+C` в каждом терминале, чтобы остановить серверы.
 
 ---
 
@@ -161,6 +219,33 @@ docker-compose up -d --build
 | PUT   | `/api/users/profile`   | Обновить профиль     |
 | PUT   | `/api/users/password`  | Сменить пароль       |
 | GET   | `/api/users/purchases` | Купленные документы  |
+
+### AI-помощник
+
+| Метод | URL             | Описание                                |
+|-------|-----------------|-----------------------------------------|
+| POST  | `/api/ai/chat`  | Задать вопрос AI по стандартам (RAG)    |
+
+**Пример запроса:**
+```json
+POST /api/ai/chat
+{
+  "message": "Что говорится в пункте 38 SHNQ 3.01.02-23?"
+}
+```
+
+**Пример ответа:**
+```json
+{
+  "answer": "38. Qurilish obyektlarida...",
+  "sources": [{...}],
+  "table_html": "...",
+  "image_urls": [...],
+  "meta": {...}
+}
+```
+
+> **Требуется**: Запущенный Django AI backend на порту 8000
 
 ---
 
