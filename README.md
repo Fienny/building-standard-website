@@ -100,7 +100,7 @@ notepad .env
 #   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/standards_db
 # (Замените второй 'postgres' на ваш пароль PostgreSQL)
 
-# 8. Создайте базу данных через psql
+# 8. Создайте пустую базу данных через psql
 
 # Найдите psql.exe (обычно в C:\Program Files\PostgreSQL\XX\bin или D:\PostgreSQL\bin)
 # Быстрый способ найти:
@@ -108,7 +108,7 @@ notepad .env
 # ИЛИ
 # Get-ChildItem "D:\" -Recurse -Filter psql.exe -ErrorAction SilentlyContinue
 
-# Перейдите в папку с psql и создайте БД:
+# Перейдите в папку с psql и создайте ПУСТУЮ БД:
 cd "D:\PostgreSQL\bin"  # Замените на ваш путь к PostgreSQL
 .\psql -U postgres
 # Введите пароль PostgreSQL
@@ -116,10 +116,23 @@ cd "D:\PostgreSQL\bin"  # Замените на ваш путь к PostgreSQL
 #   CREATE DATABASE standards_db;
 #   \q  (для выхода)
 
-# 9. Инициализируйте таблицы и тестовые данные
-python seed.py
+# ВАЖНО: Таблицы создадутся автоматически на следующем шаге!
 
-# 10. Запустите Flask backend
+# 9. Инициализируйте таблицы и тестовые данные (это создаст все таблицы!)
+python seed.py
+# Должно вывести:
+#   + Создан администратор: admin@standards.uz / admin123
+#   + Документ: ОзДСт 2710:2019 ...
+#   (и еще 9 документов)
+#   Готово! Seed завершен.
+
+# 10. (Опционально) Проверьте что таблицы созданы:
+# .\psql -U postgres
+# postgres=# \c standards_db
+# standards_db=# \dt
+# Должны быть таблицы: users, documents, purchases, payments, alembic_version
+
+# 11. Запустите Flask backend
 python run.py
 ```
 
@@ -226,6 +239,29 @@ psql -U postgres
 CREATE DATABASE standards_db;
 \q
 ```
+
+### Не вижу таблицы в psql (\dt показывает пусто)
+
+**Проблема**: Вы либо не запустили `python seed.py`, либо подключены не к той БД.
+
+**Решение**:
+```powershell
+# 1. Запустите seed.py в терминале backend (с активированным venv)
+cd backend
+python seed.py
+
+# 2. В psql подключитесь к standards_db (не к postgres!)
+.\psql -U postgres
+postgres=# \c standards_db  # <-- ВАЖНО!
+standards_db=# \dt          # Теперь увидите таблицы
+```
+
+**Какие таблицы должны быть**:
+- `users` - пользователи (1 админ)
+- `documents` - документы (10 тестовых)
+- `purchases` - покупки
+- `payments` - платежи
+- `alembic_version` - миграции
 
 ### Frontend не запускается
 
