@@ -155,32 +155,42 @@ npm run dev
 Для работы AI-помощника на главной странице:
 
 ```powershell
-# 1. Откройте ТРЕТИЙ PowerShell
+# 1. Откройте ТРЕТИЙ PowerShell в папке проекта
 cd AI-ready-project\shnq_ai_backend
 
 # 2. Создайте виртуальное окружение
 python -m venv venv
 
-# 3. Активируйте
+# 3. Активируйте виртуальное окружение
 .\venv\Scripts\Activate.ps1
 
-# 4. Установите зависимости Django
+# 4. Установите основные зависимости Django
 pip install django djangorestframework django-cors-headers openai python-dotenv
 
-# 5. Настройте DeepSeek API (нужен ключ)
-$env:DEEPSEEK_API_KEY="ваш_api_ключ"
+# 5. Установите django-jazzmin (для админ-панели)
+pip install -U django-jazzmin
+
+# 6. Настройте DeepSeek API (получите ключ на https://platform.deepseek.com/)
+$env:DEEPSEEK_API_KEY="sk-ваш_api_ключ_здесь"
 $env:DEEPSEEK_BASE_URL="https://api.deepseek.com"
 
-# 6. Примените миграции
+# 7. Примените миграции базы данных (создаст db.sqlite3)
 python manage.py migrate
 
-# 7. Запустите Django backend
+# 8. Запустите Django AI backend
 python manage.py runserver
+# Должно появиться: Starting development server at http://127.0.0.1:8000/
 ```
 
-**Django AI backend запустится на http://localhost:8000**
+**Django AI backend запустится на http://127.0.0.1:8000/**
 
-> **Примечание**: AI-помощник работает только при запущенном Django backend. Если он не нужен, можно не запускать.
+> **Примечание**: AI-помощник на главной странице работает только при запущенном Django backend. Если он не нужен сейчас, можно не запускать терминал 3.
+
+> **Как получить DeepSeek API ключ**:
+> 1. Зарегистрируйтесь на https://platform.deepseek.com/
+> 2. Перейдите в API Keys
+> 3. Создайте новый ключ
+> 4. Скопируйте и вставьте в команду выше
 
 ---
 

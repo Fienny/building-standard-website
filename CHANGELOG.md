@@ -23,6 +23,9 @@
   - Пример поиска psql.exe через Get-ChildItem
   - Обновлен DATABASE_URL в примере (.env.example)
   - Упрощены шаги установки зависимостей
+  - Добавлены детальные инструкции по запуску Django AI backend (Терминал 3)
+  - Инструкции по установке django-jazzmin
+  - Как получить DeepSeek API ключ
 
 - requirements.txt и requirements-windows.txt:
   - Унифицированы (psycopg2-binary работает везде)
