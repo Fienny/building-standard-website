@@ -2,6 +2,79 @@
 
 Все важные изменения проекта будут документированы в этом файле.
 
+## [0.4.0] - 2026-03-15
+
+### Добавлено (AI-помощник и Windows setup)
+
+#### AI-помощник на главной странице
+- **Frontend компонент AIAssistant**:
+  - Плавающая кнопка 🤖 в правом нижнем углу
+  - Чат-окно с историей сообщений
+  - Поддержка markdown, таблиц HTML, изображений
+  - Отображение источников (sources) из RAG
+  - Анимация загрузки (typing dots)
+  - Адаптивный дизайн для мобильных устройств
+
+- **Backend интеграция**:
+  - Прокси-эндпоинт `/api/ai/chat` в Flask
+  - Проксирование запросов к Django AI backend
+  - Обработка ошибок и таймаутов (60 секунд)
+  - Конфигурация через `AI_BACKEND_URL` в .env
+
+- **Django AI Backend** (shnq_ai_backend):
+  - RAG (Retrieval-Augmented Generation) для вопросов по стандартам
+  - DeepSeek API для LLM и embeddings
+  - Поддержка 4 языков (узбекский, русский, английский, корейский)
+  - Векторный поиск через Qdrant или PostgreSQL
+  - Извлечение таблиц, изображений из документов
+  - Few-shot learning для улучшения ответов
+  - SQLite база с моделями: Document, Chapter, Clause, NormTable, NormImage
+
+#### Обновлённая документация
+- **README.md**:
+  - Полностью переписан для Windows (PowerShell)
+  - Пошаговые инструкции для 2-3 терминалов
+  - Секция быстрого старта с копипастой команд
+  - Описание AI-помощника (опционально)
+  - Таблица API с `/api/ai/chat`
+  - Обновлён технологический стек
+
+- **AI-ready-project/WINDOWS_SETUP.md**:
+  - Инструкция по запуску Django AI backend
+  - Настройка DeepSeek API ключа
+  - Troubleshooting и FAQ
+  - Загрузка документов через админку
+
+#### Конфигурация
+- Добавлен `AI_BACKEND_URL` в config.py и .env.example
+- Значение по умолчанию: `http://localhost:8000`
+
+#### Требования
+- Python 3.12+ (рекомендуется 3.14)
+- Django 6.0 + DRF для AI backend
+- DeepSeek API ключ (для AI функционала)
+- Опционально: Qdrant для векторного поиска
+
+### Файловая структура
+```
+frontend/src/components/
+├── AIAssistant.jsx          # React компонент AI-чата
+└── AIAssistant.css          # Стили с градиентами и анимациями
+
+backend/app/routes/
+└── ai.py                    # Прокси для Django AI backend
+
+AI-ready-project/
+├── WINDOWS_SETUP.md         # Инструкция для Windows
+└── shnq_ai_backend/         # Django проект с RAG
+```
+
+### Примечания
+- AI-помощник работает только если запущен Django backend на :8000
+- Без DeepSeek API можно использовать fallback на sentence-transformers
+- Чат доступен на главной странице для всех пользователей
+- Ответы кэшируются в QuestionAnswer модели
+
 ## [0.3.0] - 2026-02-19
 
 ### Добавлено (Интеграция платежных систем)
