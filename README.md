@@ -85,8 +85,15 @@ python -m venv venv
 # 3. Активируйте виртуальное окружение
 .\venv\Scripts\Activate.ps1
 
-# 4. Установите зависимости
-pip install -r requirements.txt
+# 4. Обновите pip (важно!)
+python -m pip install --upgrade pip
+
+# 5. Установите зависимости
+pip install -r requirements-windows.txt
+
+# Если ошибка с psycopg2-binary на Python 3.14+:
+pip install --only-binary :all: psycopg2-binary
+# Или используйте Python 3.12
 
 # 5. Создайте файл .env (скопируйте из примера)
 copy .env.example .env
@@ -177,6 +184,71 @@ python manage.py runserver
 ### Остановка серверов
 
 Нажмите `Ctrl+C` в каждом терминале, чтобы остановить серверы.
+
+---
+
+## Troubleshooting (Windows)
+
+### Ошибка: "Microsoft Visual C++ 14.0 or greater is required"
+
+**Проблема**: `psycopg2-binary` или `Pillow` требуют компиляции.
+
+**Решение 1** (рекомендуется): Используйте `requirements-windows.txt`
+```powershell
+pip install -r requirements-windows.txt
+```
+
+**Решение 2**: Установите только бинарные версии
+```powershell
+pip install --only-binary :all: psycopg2-binary Pillow
+```
+
+**Решение 3**: Используйте Python 3.12 вместо 3.14
+```powershell
+# Удалите venv
+rmdir /s venv
+
+# Используйте Python 3.12
+py -3.12 -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-windows.txt
+```
+
+### Ошибка: "Pillow 11.1.0 does not support Python 3.14"
+
+**Решение**: Установите совместимую версию
+```powershell
+pip install "Pillow>=10.0.0,<11.0"
+```
+
+### Ошибка: "execution policy" при активации venv
+
+**Решение**: Разрешите выполнение скриптов
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### Ошибка: "Could not connect to PostgreSQL"
+
+**Проверьте**:
+1. PostgreSQL запущен (проверьте Services)
+2. Пароль в `.env` правильный
+3. База данных `standards_db` создана:
+```powershell
+psql -U postgres
+CREATE DATABASE standards_db;
+\q
+```
+
+### Frontend не запускается
+
+**Решение**:
+```powershell
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
 
 ---
 
