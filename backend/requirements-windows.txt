@@ -7,18 +7,15 @@ flask-sqlalchemy==3.1.1
 flask-migrate==4.1.0
 flask-jwt-extended==4.7.1
 
-# PostgreSQL driver для Windows (без компиляции)
-# Если не работает, установите через: pip install psycopg2-binary --only-binary :all:
-psycopg2-binary; python_version < '3.14'
-# Для Python 3.14+ используйте:
-# pip install https://download.lfd.uci.edu/pythonlibs/archived/psycopg2_binary-2.9.9-cp314-cp314-win_amd64.whl
+# PostgreSQL driver для Windows - Psycopg3 (современная замена psycopg2)
+# Полностью совместим с Python 3.14, имеет готовые wheel'ы для Windows
+psycopg[binary]>=3.1.0
 
 python-dotenv==1.0.1
 werkzeug==3.1.3
 
-# PyMuPDF и Pillow - используем более старые версии для совместимости
-PyMuPDF>=1.23.0,<1.26
-Pillow>=10.0.0,<11.0
+# PyMuPDF для работы с PDF (работает без Pillow для базовых операций)
+PyMuPDF>=1.23.0
 
 requests==2.31.0
 

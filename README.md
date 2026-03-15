@@ -88,29 +88,25 @@ python -m venv venv
 # 4. Обновите pip (важно!)
 python -m pip install --upgrade pip
 
-# 5. Установите зависимости
+# 5. Установите зависимости (совместимы с Python 3.14)
 pip install -r requirements-windows.txt
 
-# Если ошибка с psycopg2-binary на Python 3.14+:
-pip install --only-binary :all: psycopg2-binary
-# Или используйте Python 3.12
-
-# 5. Создайте файл .env (скопируйте из примера)
+# 6. Создайте файл .env (скопируйте из примера)
 copy .env.example .env
 
-# 6. Отредактируйте .env в блокноте
+# 7. Отредактируйте .env в блокноте
 notepad .env
 # Укажите данные PostgreSQL:
 #   DATABASE_URL=postgresql://postgres:ваш_пароль@localhost:5432/standards_db
 
-# 7. Создайте базу данных
+# 8. Создайте базу данных
 # Откройте psql или pgAdmin и выполните:
 #   CREATE DATABASE standards_db;
 
-# 8. Инициализируйте таблицы и тестовые данные
+# 9. Инициализируйте таблицы и тестовые данные
 python seed.py
 
-# 9. Запустите Flask backend
+# 10. Запустите Flask backend
 python run.py
 ```
 
@@ -188,38 +184,6 @@ python manage.py runserver
 ---
 
 ## Troubleshooting (Windows)
-
-### Ошибка: "Microsoft Visual C++ 14.0 or greater is required"
-
-**Проблема**: `psycopg2-binary` или `Pillow` требуют компиляции.
-
-**Решение 1** (рекомендуется): Используйте `requirements-windows.txt`
-```powershell
-pip install -r requirements-windows.txt
-```
-
-**Решение 2**: Установите только бинарные версии
-```powershell
-pip install --only-binary :all: psycopg2-binary Pillow
-```
-
-**Решение 3**: Используйте Python 3.12 вместо 3.14
-```powershell
-# Удалите venv
-rmdir /s venv
-
-# Используйте Python 3.12
-py -3.12 -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements-windows.txt
-```
-
-### Ошибка: "Pillow 11.1.0 does not support Python 3.14"
-
-**Решение**: Установите совместимую версию
-```powershell
-pip install "Pillow>=10.0.0,<11.0"
-```
 
 ### Ошибка: "execution policy" при активации venv
 
