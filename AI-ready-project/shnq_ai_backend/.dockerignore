@@ -8,6 +8,12 @@ venv/
 env/
 ENV/
 
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
 # IDEs
 .vscode/
 .idea/
@@ -18,9 +24,6 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Project specific
-uploads/
-logs/
-*.log
+# Env
 .env
 .env.local

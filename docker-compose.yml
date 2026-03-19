@@ -38,6 +38,7 @@ services:
       - UPLOAD_FOLDER=/app/uploads/documents
       - PRICE_PER_PAGE=1000
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - AI_BACKEND_URL=http://ai-backend:8000
     volumes:
       - ./backend/uploads/documents:/app/uploads/documents
     ports:
@@ -48,20 +49,35 @@ services:
     networks:
       - standards-network
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: standards-nginx
+  # Django AI Backend
+  ai-backend:
+    build:
+      context: ./AI-ready-project/shnq_ai_backend
+      dockerfile: Dockerfile
+    container_name: standards-ai-backend
     restart: always
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
     volumes:
-      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/logs:/var/log/nginx
-      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ai-db:/app/db
+    ports:
+      - "8000:8000"
+    networks:
+      - standards-network
+
+  # React Frontend (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: standards-frontend
+    restart: always
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       - backend
+      - ai-backend
     networks:
       - standards-network
 
@@ -71,4 +87,6 @@ networks:
 
 volumes:
   postgres-data:
+    driver: local
+  ai-db:
     driver: local

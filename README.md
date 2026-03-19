@@ -61,7 +61,81 @@
 
 ---
 
-## Быстрый старт (Windows)
+## 🐳 Запуск через Docker (рекомендуется)
+
+Самый простой способ запустить весь проект — через Docker Compose.
+
+### Требования
+
+- **Docker Desktop** — https://www.docker.com/products/docker-desktop/
+- **Docker Compose** (входит в Docker Desktop)
+
+### Инструкции
+
+```bash
+# 1. Клонируйте репозиторий
+git clone https://github.com/your-repo/building-standard-website.git
+cd building-standard-website
+
+# 2. Создайте .env файл из примера
+copy .env.docker .env  # Windows
+# или
+cp .env.docker .env    # Linux/Mac
+
+# 3. Отредактируйте .env и заполните:
+#    - DB_PASSWORD (пароль PostgreSQL)
+#    - SECRET_KEY (случайная строка)
+#    - JWT_SECRET_KEY (другая случайная строка)
+#    - DEEPSEEK_API_KEY (ваш API ключ DeepSeek)
+
+# 4. Запустите все сервисы одной командой
+docker-compose up -d
+
+# Первый запуск займёт 5-10 минут (скачивание образов и сборка)
+```
+
+**Готово!** 🎉
+
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:5000
+- **AI Backend**: http://localhost:8000
+
+### Полезные команды Docker
+
+```bash
+# Посмотреть логи всех сервисов
+docker-compose logs -f
+
+# Посмотреть логи конкретного сервиса
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f ai-backend
+
+# Остановить все сервисы
+docker-compose down
+
+# Остановить и удалить данные (включая БД)
+docker-compose down -v
+
+# Перезапустить конкретный сервис
+docker-compose restart backend
+
+# Пересобрать образы после изменения кода
+docker-compose up -d --build
+```
+
+### Структура сервисов
+
+| Сервис | Контейнер | Порт | Описание |
+|--------|-----------|------|----------|
+| postgres | standards-db | 5432 | PostgreSQL база данных |
+| backend | standards-backend | 5000 | Flask API + seed.py |
+| ai-backend | standards-ai-backend | 8000 | Django AI помощник |
+| frontend | standards-frontend | 80 | React + Nginx |
+
+---
+
+## Быстрый старт (Windows без Docker)
 
 ### Требования
 

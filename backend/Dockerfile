@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -18,4 +18,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "wsgi:app"]
+# Инициализация БД и запуск
+CMD ["sh", "-c", "python seed.py && gunicorn --bind 0.0.0.0:5000 --workers 2 wsgi:app"]
