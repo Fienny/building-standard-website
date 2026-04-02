@@ -36,12 +36,14 @@ def create_app():
     from .routes.payments import payments_bp
     from .routes.users import users_bp
     from .routes.ai import ai_bp
+    from .routes.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(documents_bp, url_prefix="/api/documents")
     app.register_blueprint(payments_bp, url_prefix="/api/payments")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(ai_bp, url_prefix="/api/ai")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
     # Health check
     @app.route("/api/health")
