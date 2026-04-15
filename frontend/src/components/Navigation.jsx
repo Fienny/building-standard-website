@@ -16,7 +16,7 @@ function Navigation() {
       <div className="container">
         <div className="nav-content">
           <Link to="/" className="logo">
-            <h2>Стандарты РУз</h2>
+            <h2>BENKA Standards</h2>
           </Link>
           <div className="nav-links">
             <Link to="/documents" className="nav-link">Документы</Link>
