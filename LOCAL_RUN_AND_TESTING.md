@@ -175,3 +175,21 @@ python scripts/bulk_upload.py ./documents-normalized/normalized --no-ai
 2. Проверка `/api/health` (backend)
 3. Smoke-check из раздела 4
 4. Обновление `codex.md` (что сделали/риски/next steps)
+
+
+## 9) Telegram-логирование для оператора
+
+Для получения статусов загрузки в Telegram задайте переменные окружения:
+
+```bash
+export TELEGRAM_BOT_TOKEN=...
+export TELEGRAM_CHAT_ID=...
+```
+
+После этого `normalize_documents.py` и `bulk_upload.py` будут отправлять сообщения о старте/успехе/ошибках.
+
+Пример загрузки с manifest:
+
+```bash
+python scripts/bulk_upload.py /mnt/standards-archive/processed/normalized --manifest /mnt/standards-archive/manifests/batch_manifest.csv
+```
