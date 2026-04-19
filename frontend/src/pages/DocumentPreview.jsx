@@ -4,6 +4,20 @@ import { useAuth } from '../utils/AuthContext';
 import api from '../utils/api';
 import './DocumentPreview.css';
 
+const PAYMENT_LABELS = {
+  click: 'Click',
+  payme: 'PayMe',
+  card: 'Банковская карта',
+};
+
+function formatPrice(value) {
+  const numericPrice = Number(value);
+  if (Number.isNaN(numericPrice)) {
+    return '—';
+  }
+  return numericPrice.toLocaleString('ru-RU');
+}
+
 function DocumentPreview() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -14,53 +28,99 @@ function DocumentPreview() {
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info');
+  const [paymentUrl, setPaymentUrl] = useState('');
 
   useEffect(() => {
-    api.get(`/documents/${id}`)
-      .then((data) => {
-        setDocument(data.document);
-        setIsPurchased(data.isPurchased);
-      })
-      .catch(() => setDocument(null))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    const loadDocument = async () => {
+      try {
+        const data = await api.get(`/documents/${id}`);
+        if (cancelled) {
+          return;
+        }
+        setDocument(data.document || null);
+        setIsPurchased(Boolean(data.isPurchased));
+      } catch {
+        if (!cancelled) {
+          setDocument(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDocument();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
+
+  const setFeedback = (text, type = 'info') => {
+    setMessage(text);
+    setMessageType(type);
+  };
 
   const handlePurchase = async () => {
     if (!user) {
-      setMessage('Войдите в аккаунт для покупки документа');
+      setFeedback('Войдите в аккаунт для покупки документа.', 'warning');
       return;
     }
 
     if (!selectedPayment) {
-      setMessage('Пожалуйста, выберите способ оплаты');
+      setFeedback('Пожалуйста, выберите способ оплаты.', 'warning');
       return;
     }
 
     setPaymentLoading(true);
     setMessage('');
+    setPaymentUrl('');
 
     try {
-      await api.post('/payments/create', {
-        document_id: parseInt(id),
+      const payload = await api.post('/payments/create', {
+        document_id: Number.parseInt(id, 10),
         payment_method: selectedPayment,
       });
-      setMessage('Платеж создан. Интеграция с платежной системой будет подключена позже.');
+
+      const nextPaymentUrl = payload?.payment_url;
+      if (nextPaymentUrl) {
+        setPaymentUrl(nextPaymentUrl);
+        setFeedback(
+          `Платёж создан через ${PAYMENT_LABELS[selectedPayment]}. Откройте страницу провайдера для завершения оплаты.`,
+          'success',
+        );
+      } else {
+        setFeedback(
+          'Платёж создан, но ссылка провайдера не получена. Обратитесь к администратору.',
+          'warning',
+        );
+      }
     } catch (err) {
-      setMessage(err.message);
+      setFeedback(err.message || 'Не удалось создать платёж. Попробуйте позже.', 'error');
     } finally {
       setPaymentLoading(false);
     }
   };
 
   if (loading) {
-    return <div className="container" style={{ padding: '60px 20px', textAlign: 'center' }}><p>Загрузка...</p></div>;
+    return (
+      <div className="container" style={{ padding: '60px 20px', textAlign: 'center' }}>
+        <p>Загрузка...</p>
+      </div>
+    );
   }
 
   if (!document) {
     return (
       <div className="container" style={{ padding: '60px 20px', textAlign: 'center' }}>
         <h2>Документ не найден</h2>
-        <Link to="/documents" className="btn btn-primary mt-3">Вернуться к документам</Link>
+        <Link to="/documents" className="btn btn-primary mt-3">
+          Вернуться к документам
+        </Link>
       </div>
     );
   }
@@ -71,19 +131,21 @@ function DocumentPreview() {
     <div className="preview-page">
       <div className="container">
         <div className="preview-header">
-          <Link to="/documents" className="back-link">&#8592; Назад к документам</Link>
+          <Link to="/documents" className="back-link">
+            &#8592; Назад к документам
+          </Link>
           <div className="document-info-header">
             <div>
               <h1>{document.title}</h1>
               <div className="document-meta">
-                <span className="meta-badge">{document.category}</span>
-                <span className="meta-item">{document.year}</span>
-                <span className="meta-item">{document.pages} страниц</span>
+                <span className="meta-badge">{document.category || 'Без категории'}</span>
+                {document.year ? <span className="meta-item">{document.year}</span> : null}
+                <span className="meta-item">{document.pages || 0} страниц</span>
               </div>
             </div>
             <div className="price-tag">
               <span className="price-label">Цена:</span>
-              <span className="price-value">{document.price.toLocaleString('ru-RU')} сум</span>
+              <span className="price-value">{formatPrice(document.price)} сум</span>
             </div>
           </div>
           {document.description && <p className="document-description">{document.description}</p>}
@@ -92,11 +154,17 @@ function DocumentPreview() {
         <div className="preview-content">
           <div className="preview-section">
             <h2>Предварительный просмотр</h2>
-            <p className="preview-notice">Вы можете бесплатно просмотреть первые 2 страницы документа</p>
+            <p className="preview-notice">Вы можете бесплатно просмотреть первые 2 страницы документа.</p>
 
             {previewUrl ? (
               <div className="pdf-preview">
-                <iframe src={previewUrl} title="Preview" width="100%" height="800" style={{ border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                <iframe
+                  src={previewUrl}
+                  title="Preview"
+                  width="100%"
+                  height="800"
+                  style={{ border: '1px solid var(--border-color)', borderRadius: '8px' }}
+                />
               </div>
             ) : (
               <div className="preview-placeholder">
@@ -108,7 +176,7 @@ function DocumentPreview() {
               <div className="locked-pages">
                 <div className="lock-icon">&#x1F512;</div>
                 <h3>Остальные страницы доступны после оплаты</h3>
-                <p>Чтобы получить полный доступ к документу, оформите покупку</p>
+                <p>Чтобы получить полный доступ к документу, оформите покупку.</p>
               </div>
             )}
           </div>
@@ -118,12 +186,12 @@ function DocumentPreview() {
               <div className="payment-card">
                 <h3>Купить полный документ</h3>
                 <div className="payment-price">
-                  <span className="price-amount">{document.price.toLocaleString('ru-RU')}</span>
+                  <span className="price-amount">{formatPrice(document.price)}</span>
                   <span className="price-currency">сум</span>
                 </div>
 
                 <div className="payment-info">
-                  <p>&#10003; Полный доступ ко всем {document.pages} страницам</p>
+                  <p>&#10003; Полный доступ ко всем {document.pages || 0} страницам</p>
                   <p>&#10003; Возможность скачивания в PDF</p>
                   <p>&#10003; Безлимитный просмотр</p>
                 </div>
@@ -131,30 +199,38 @@ function DocumentPreview() {
                 <div className="payment-methods">
                   <h4>Способ оплаты:</h4>
                   <div className="payment-options">
-                    <label className={`payment-option ${selectedPayment === 'click' ? 'selected' : ''}`}>
-                      <input type="radio" name="payment" value="click"
-                        checked={selectedPayment === 'click'} onChange={(e) => setSelectedPayment(e.target.value)} />
-                      <span className="payment-name">Click</span>
-                    </label>
-
-                    <label className={`payment-option ${selectedPayment === 'payme' ? 'selected' : ''}`}>
-                      <input type="radio" name="payment" value="payme"
-                        checked={selectedPayment === 'payme'} onChange={(e) => setSelectedPayment(e.target.value)} />
-                      <span className="payment-name">PayMe</span>
-                    </label>
-
-                    <label className={`payment-option ${selectedPayment === 'card' ? 'selected' : ''}`}>
-                      <input type="radio" name="payment" value="card"
-                        checked={selectedPayment === 'card'} onChange={(e) => setSelectedPayment(e.target.value)} />
-                      <span className="payment-name">Банковская карта</span>
-                    </label>
+                    {Object.entries(PAYMENT_LABELS).map(([method, label]) => (
+                      <label
+                        key={method}
+                        className={`payment-option ${selectedPayment === method ? 'selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={method}
+                          checked={selectedPayment === method}
+                          onChange={(event) => setSelectedPayment(event.target.value)}
+                        />
+                        <span className="payment-name">{label}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
-                {message && <div className="payment-message">{message}</div>}
+                {message && <div className={`payment-message payment-message-${messageType}`}>{message}</div>}
 
-                <button onClick={handlePurchase} className="btn btn-accent w-full" disabled={paymentLoading}>
-                  {paymentLoading ? 'Обработка...' : 'Оплатить'}
+                {paymentUrl && (
+                  <a className="btn btn-primary w-full" href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                    Перейти к оплате
+                  </a>
+                )}
+
+                <button
+                  onClick={handlePurchase}
+                  className="btn btn-accent w-full mt-2"
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? 'Создание платежа...' : 'Создать платеж'}
                 </button>
               </div>
             </div>

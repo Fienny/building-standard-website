@@ -1,21 +1,21 @@
 :root {
-  /* Цветовая палитра */
-  --primary-color: #2c5f7d;
-  --primary-dark: #1e4259;
-  --primary-light: #3d7a9f;
-  --secondary-color: #f5f7fa;
-  --accent-color: #ff6b35;
-  --accent-hover: #e55a2b;
-  --text-primary: #1a1a1a;
-  --text-secondary: #6b7280;
+  /* Benka-inspired palette: graphite + warm accent */
+  --primary-color: #11283e;
+  --primary-dark: #0b1d2d;
+  --primary-light: #1f4362;
+  --secondary-color: #f3f6f9;
+  --accent-color: #f59e0b;
+  --accent-hover: #d97706;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
   --text-light: #9ca3af;
-  --border-color: #e5e7eb;
-  --success-color: #10b981;
-  --error-color: #ef4444;
+  --border-color: #dbe2ea;
+  --success-color: #16a34a;
+  --error-color: #dc2626;
   --white: #ffffff;
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow: 0 1px 3px 0 rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 8px 20px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 16px 38px rgba(16, 24, 40, 0.12);
 }
 
 * {
@@ -25,9 +25,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--text-primary);
@@ -42,7 +41,7 @@ html, body, #root {
 a {
   text-decoration: none;
   color: inherit;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 button {
@@ -50,7 +49,7 @@ button {
   border: none;
   outline: none;
   font-family: inherit;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 input, textarea, select {
@@ -58,7 +57,6 @@ input, textarea, select {
   outline: none;
 }
 
-/* Утилитарные классы */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -67,11 +65,11 @@ input, textarea, select {
 
 .btn {
   padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: inline-block;
   text-align: center;
 }
@@ -101,11 +99,15 @@ input, textarea, select {
 }
 
 .btn-secondary:hover {
-  background-color: #e9ecef;
+  background-color: #e6ebf1;
 }
 
 .text-center {
   text-align: center;
+}
+
+.w-full {
+  width: 100%;
 }
 
 .mt-1 { margin-top: 8px; }

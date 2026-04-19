@@ -11,6 +11,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+from telegram_notifier import TelegramNotifier
+
 
 class DocumentNormalizer:
     """Нормализация документов SHNQ"""
@@ -35,6 +37,7 @@ class DocumentNormalizer:
     ]
 
     def __init__(self, input_dir: str, output_dir: str):
+        self.notifier = TelegramNotifier(process_name="normalize_documents")
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.normalized_dir = self.output_dir / "normalized"
@@ -180,6 +183,7 @@ class DocumentNormalizer:
     def process_all(self):
         """Обрабатывает все файлы в папке"""
         print(f"📂 Сканирую: {self.input_dir}")
+        self.notifier.info(f"Старт нормализации\nInput: {self.input_dir}\nOutput: {self.output_dir}")
 
         # Находим все PDF и DOC/DOCX
         files = list(self.input_dir.glob('*.pdf'))
@@ -187,6 +191,7 @@ class DocumentNormalizer:
         files += list(self.input_dir.glob('*.docx'))
 
         print(f"📊 Найдено файлов: {len(files)}")
+        self.notifier.info(f"Найдено файлов: {len(files)}")
 
         for file_path in sorted(files):
             print(f"\n🔄 Обработка: {file_path.name}")
@@ -226,11 +231,31 @@ class DocumentNormalizer:
         print("\n" + "="*50)
         print("📊 СВОДКА")
         print("="*50)
+        summary = (
+            f"Всего: {total}\n"
+            f"Обработано: {ok}\n"
+            f"Конвертировано: {converted}\n"
+            f"Ошибок: {errors}"
+        )
+        if errors > 0:
+            self.notifier.warning(f"Нормализация завершена с ошибками\n{summary}")
+        else:
+            self.notifier.success(f"Нормализация завершена успешно\n{summary}")
         print(f"Всего файлов:      {total}")
         print(f"✅ Обработано:     {ok}")
         print(f"📄 Конвертировано: {converted}")
         print(f"❌ Ошибок:         {errors}")
         print("="*50)
+        summary = (
+            f"Всего: {total}\n"
+            f"Обработано: {ok}\n"
+            f"Конвертировано: {converted}\n"
+            f"Ошибок: {errors}"
+        )
+        if errors > 0:
+            self.notifier.warning(f"Нормализация завершена с ошибками\n{summary}")
+        else:
+            self.notifier.success(f"Нормализация завершена успешно\n{summary}")
 
 
 def main():

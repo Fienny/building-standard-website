@@ -4,19 +4,22 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  padding: 16px 0;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .nav-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .logo h2 {
   color: var(--primary-color);
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .logo:hover h2 {
@@ -26,13 +29,13 @@
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 .nav-link {
   color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.3s ease;
+  font-weight: 600;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover {
@@ -47,4 +50,21 @@
   color: var(--text-secondary);
   font-weight: 500;
   font-size: 14px;
+  background: var(--secondary-color);
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+  .logo h2 {
+    font-size: 19px;
+  }
+
+  .nav-links {
+    gap: 10px;
+  }
+
+  .nav-user {
+    display: none;
+  }
 }
