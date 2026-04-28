@@ -4,6 +4,7 @@
 - Конвертация DOC/DOCX → PDF
 - Подсчёт страниц
 - Извлечение метаданных
+- Загрузка в Wasabi S3 storage
 """
 import os
 import re
@@ -12,6 +13,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 from werkzeug.utils import secure_filename
 import fitz  # PyMuPDF
+from .storage import WasabiStorage
 
 
 class DocumentProcessor:
@@ -34,9 +36,10 @@ class DocumentProcessor:
         'KR': 'Конструкции и расчёты',
     }
 
-    def __init__(self, upload_folder: str):
+    def __init__(self, upload_folder: str, storage: Optional[WasabiStorage] = None):
         self.upload_folder = Path(upload_folder)
         self.upload_folder.mkdir(parents=True, exist_ok=True)
+        self.storage = storage
 
     def extract_code(self, filename: str) -> Optional[Tuple[str, str]]:
         """
@@ -196,16 +199,40 @@ class DocumentProcessor:
             # Подсчитываем страницы
             pages = self.count_pages(final_path)
 
+            # Загружаем в Wasabi, если storage настроен
+            file_url = None
+            if self.storage:
+                try:
+                    object_name = f"documents/{normalized_filename}"
+                    file_url = self.storage.upload_file_from_path(
+                        str(final_path),
+                        object_name,
+                        content_type='application/pdf'
+                    )
+
+                    # Удаляем локальный файл после успешной загрузки
+                    if file_url:
+                        final_path.unlink()
+                        file_path_result = file_url
+                    else:
+                        file_path_result = final_path.name
+                except Exception as e:
+                    # Если не удалось загрузить в Wasabi - оставляем локальный файл
+                    file_path_result = final_path.name
+            else:
+                # Без storage - используем локальный путь
+                file_path_result = final_path.name
+
             return {
                 'status': 'success',
-                'file_path': final_path.name,
+                'file_path': file_path_result,
                 'title': title,
                 'category': category,
                 'year': year,
                 'pages': pages,
                 'description': manual_description,
                 'original_filename': original_filename,
-                'normalized_filename': final_path.name
+                'normalized_filename': normalized_filename
             }
 
         except Exception as e:

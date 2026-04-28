@@ -9,3 +9,4 @@ gunicorn==23.0.0; sys_platform != 'win32'  # Gunicorn не работает на
 PyMuPDF>=1.24.0  # PDF обработка (работает без Pillow для базовых операций)
 requests==2.31.0
 psycopg2-binary  # PostgreSQL driver (работает на Python 3.14)
+boto3==1.34.51  # AWS S3 / Wasabi storage client

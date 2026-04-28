@@ -12,6 +12,7 @@ from app.models.document import Document
 from app.models.user import User
 from app.services.document_processor import DocumentProcessor
 from app.services.ai_sync import AIBackendSync
+from app.services.storage import get_wasabi_storage
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -69,8 +70,9 @@ def new_document():
         auto_sync_ai = request.form.get('sync_ai', 'on') == 'on'
 
         try:
-            # Инициализируем процессор документов
-            processor = DocumentProcessor(current_app.config['UPLOAD_FOLDER'])
+            # Инициализируем процессор документов с Wasabi storage
+            storage = get_wasabi_storage()
+            processor = DocumentProcessor(current_app.config['UPLOAD_FOLDER'], storage=storage)
 
             # Обрабатываем файл (автоматически)
             result = processor.process_upload(
@@ -155,11 +157,23 @@ def delete_document(doc_id):
 
     document = Document.query.get_or_404(doc_id)
 
-    # Удаляем файл
+    # Удаляем файл из Wasabi или локальной файловой системы
     if document.file_path:
-        file_path = Path(current_app.config['UPLOAD_FOLDER']) / document.file_path
-        if file_path.exists():
-            file_path.unlink()
+        if document.file_path.startswith('http'):
+            # Файл в Wasabi - удаляем через storage API
+            try:
+                storage = get_wasabi_storage()
+                # Извлекаем object_name из URL
+                # URL формата: https://s3.eu-central-1.wasabisys.com/standards/documents/SHNQ_X.XX.XX-YY.pdf
+                object_name = '/'.join(document.file_path.split('/')[-2:])  # documents/SHNQ_X.XX.XX-YY.pdf
+                storage.delete_file(object_name)
+            except Exception as e:
+                flash(f"⚠️ Не удалось удалить файл из Wasabi: {str(e)}", 'warning')
+        else:
+            # Локальный файл - удаляем из файловой системы
+            file_path = Path(current_app.config['UPLOAD_FOLDER']) / document.file_path
+            if file_path.exists():
+                file_path.unlink()
 
     # Удаляем из AI backend
     try:

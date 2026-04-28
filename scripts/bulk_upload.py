@@ -14,6 +14,7 @@ from app import create_app, db
 from app.models.document import Document
 from app.services.document_processor import DocumentProcessor
 from app.services.ai_sync import AIBackendSync
+from app.services.storage import get_wasabi_storage
 
 
 def bulk_upload(documents_dir: str, sync_ai: bool = True):
@@ -43,8 +44,9 @@ def bulk_upload(documents_dir: str, sync_ai: bool = True):
         print(f"🤖 AI синхронизация: {'Вкл' if sync_ai else 'Выкл'}")
         print("\n" + "="*60)
 
-        # Инициализируем процессор
-        processor = DocumentProcessor(app.config['UPLOAD_FOLDER'])
+        # Инициализируем процессор с Wasabi storage
+        storage = get_wasabi_storage()
+        processor = DocumentProcessor(app.config['UPLOAD_FOLDER'], storage=storage)
         ai_sync = AIBackendSync(app.config['AI_BACKEND_URL']) if sync_ai else None
 
         stats = {
