@@ -130,7 +130,9 @@ class DocumentProcessor:
             year_suffix = int(match.group(1))
             # Преобразуем 2-значный год в 4-значный
             return 2000 + year_suffix if year_suffix < 50 else 1900 + year_suffix
-        return None
+        # Если год не найден - возвращаем текущий год как дефолт
+        from datetime import datetime
+        return datetime.now().year
 
     def process_upload(
         self,

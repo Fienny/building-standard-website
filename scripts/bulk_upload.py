@@ -128,6 +128,7 @@ def bulk_upload(documents_dir: str, sync_ai: bool = True):
 
             except Exception as e:
                 print(f"   ❌ Ошибка обработки: {str(e)}")
+                db.session.rollback()  # Откатываем транзакцию при ошибке
                 stats['errors'] += 1
                 continue
 
