@@ -23,7 +23,7 @@ class DocumentProcessor:
     CODE_PATTERNS = [
         r'SHNQ[\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
         r'shnq[\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
-        r'[KkКк][MmМм][QqҚқ][\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
+        r'[KkКк][MmМм][QqҚқKk][\s_-]+(\d+\.\d+\.\d+[-_]\d+)',  # Добавлен Kk для kmk
         r'[KkКк][RrРр][\s_-]+(\d+\.\d+[-_]\d+)',
         r'shnk[-_](\d+\.\d+\.\d+[-_]\d+)',
         r'^(\d+\.\d+\.\d+[-_]\d+)',
