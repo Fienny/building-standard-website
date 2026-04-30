@@ -13,12 +13,13 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5432:5432"
     networks:
       - standards-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U standards_user -d standards_db"]
+      test: ["CMD-SHELL", "pg_isready -U standards_user"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,8 +40,13 @@ services:
       - PRICE_PER_PAGE=1000
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
       - AI_BACKEND_URL=http://ai-backend:8000
+      # Wasabi S3 Storage
+      - WASABI_ACCESS_KEY_ID=${WASABI_ACCESS_KEY_ID}
+      - WASABI_SECRET_ACCESS_KEY=${WASABI_SECRET_ACCESS_KEY}
+      - WASABI_BUCKET_NAME=${WASABI_BUCKET_NAME:-standards}
+      - WASABI_REGION=${WASABI_REGION:-eu-central-1}
     volumes:
-      - ./backend/uploads/documents:/app/uploads/documents
+      - backend-uploads:/app/uploads/documents
     ports:
       - "5000:5000"
     depends_on:
@@ -48,6 +54,24 @@ services:
         condition: service_healthy
     networks:
       - standards-network
+
+  # Qdrant Vector Database (для AI поиска)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: standards-qdrant
+    restart: always
+    volumes:
+      - qdrant-data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    networks:
+      - standards-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Django AI Backend
   ai-backend:
@@ -59,10 +83,18 @@ services:
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      - DATABASE_URL=postgresql://standards_user:${DB_PASSWORD:-change_this_password}@postgres:5432/standards_ai_db
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
     volumes:
-      - ai-db:/app/db
+      - ai-media:/app/media
     ports:
       - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
     networks:
       - standards-network
 
@@ -88,5 +120,9 @@ networks:
 volumes:
   postgres-data:
     driver: local
-  ai-db:
+  qdrant-data:
+    driver: local
+  ai-media:
+    driver: local
+  backend-uploads:
     driver: local
