@@ -1,8 +1,7 @@
 -- Инициализация баз данных для Standards Platform
--- Создается две БД: для Flask backend и для Django AI backend
+-- standards_db уже создается через POSTGRES_DB
 
--- Flask Backend Database
-CREATE DATABASE standards_db;
+-- Подключаемся к стандартной БД и создаем расширения
 \c standards_db;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -10,7 +9,4 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE DATABASE standards_ai_db;
 \c standards_ai_db;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS vector;  -- для pgvector если будем использовать
 
--- Возвращаемся к дефолтной БД
-\c postgres;
