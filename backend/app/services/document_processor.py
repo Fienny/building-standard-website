@@ -21,12 +21,20 @@ class DocumentProcessor:
 
     # Паттерны для извлечения кода документа
     CODE_PATTERNS = [
+        # Латиница SHNQ/SHNK
         r'SHNQ[\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
         r'shnq[\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
-        r'[KkКк][MmМм][QqҚқKk][\s_-]+(\d+\.\d+\.\d+[-_]\d+)',  # Добавлен Kk для kmk
-        r'[KkКк][RrРр][\s_-]+(\d+\.\d+[-_]\d+)',
         r'shnk[-_](\d+\.\d+\.\d+[-_]\d+)',
+        # Кириллица ШНҚ/ШНК
+        r'[ШшSs][НнNn][ҚқКкQqKk][\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
+        # Латиница/кириллица KMQ/KMK/КМК
+        r'[KkКк][MmМм][QqҚқKkКк][\s_-]+(\d+\.\d+\.\d+[-_]\d+)',
+        # Латиница/кириллица KR/КР/ҚР
+        r'[KkКкҚқ][RrРр][\s_-]+(\d+\.\d+[-_]\d+)',
+        # Просто цифры в начале
         r'^(\d+\.\d+\.\d+[-_]\d+)',
+        # Просто цифры с точкой (для ҚР)
+        r'^(\d+\.\d+[-_]\d+)',
     ]
 
     # Категории документов
@@ -53,12 +61,12 @@ class DocumentProcessor:
             if match:
                 code = match.group(1).replace('_', '-')
 
-                # Определяем префикс
-                if 'shnq' in filename_lower or 'shnk' in filename_lower:
+                # Определяем префикс (латиница и кириллица)
+                if any(x in filename_lower for x in ['shnq', 'shnk', 'шнқ', 'шнк']):
                     prefix = 'SHNQ'
                 elif any(x in filename_lower for x in ['kmq', 'kmk', 'кмқ', 'кмк']):
                     prefix = 'KMQ'
-                elif any(x in filename_lower for x in ['kr', 'кр']):
+                elif any(x in filename_lower for x in ['kr', 'кр', 'қр']):
                     prefix = 'KR'
                 else:
                     prefix = 'SHNQ'
