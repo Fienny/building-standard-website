@@ -85,25 +85,43 @@ def preview_document(doc_id):
     """Return a PDF containing only the first 2 pages of the document."""
     doc = Document.query.get_or_404(doc_id)
 
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
     if not doc.file_path:
         return jsonify({"error": "Файл документа не загружен"}), 404
 
-    full_path = os.path.join(upload_folder, doc.file_path)
-    if not os.path.isfile(full_path):
-        return jsonify({"error": "Файл не найден на сервере"}), 404
+    try:
+        # Download PDF from Wasabi S3
+        from app.services.storage import get_wasabi_storage
+        wasabi = get_wasabi_storage()
+        pdf_bytes = wasabi.download_file(doc.file_path)
 
-    preview_bytes = get_preview_pdf(full_path, max_pages=2)
-    if preview_bytes is None:
+        # Create preview from downloaded PDF
+        from io import BytesIO
+        import fitz  # PyMuPDF
+
+        # Open PDF from bytes
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+        # Create new PDF with only first 2 pages
+        preview_pdf = fitz.open()
+        max_pages = min(2, pdf.page_count)
+        preview_pdf.insert_pdf(pdf, from_page=0, to_page=max_pages - 1)
+
+        # Convert to bytes
+        preview_bytes = preview_pdf.tobytes()
+
+        # Close PDFs
+        pdf.close()
+        preview_pdf.close()
+
+        return send_file(
+            BytesIO(preview_bytes),
+            mimetype="application/pdf",
+            download_name=f"preview_{doc_id}.pdf",
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Preview error for doc {doc_id}: {str(e)}")
         return jsonify({"error": "Не удалось создать превью"}), 500
-
-    from io import BytesIO
-
-    return send_file(
-        BytesIO(preview_bytes),
-        mimetype="application/pdf",
-        download_name=f"preview_{doc_id}.pdf",
-    )
 
 
 @documents_bp.route("/<int:doc_id>/download", methods=["GET"])
@@ -123,12 +141,27 @@ def download_document(doc_id):
     if not purchase and (not user or user.role != "admin"):
         return jsonify({"error": "Документ не оплачен"}), 403
 
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
     if not doc.file_path:
         return jsonify({"error": "Файл документа не загружен"}), 404
 
-    full_path = os.path.join(upload_folder, doc.file_path)
-    if not os.path.isfile(full_path):
-        return jsonify({"error": "Файл не найден на сервере"}), 404
+    try:
+        # Download full PDF from Wasabi S3
+        from app.services.storage import get_wasabi_storage
+        from io import BytesIO
 
-    return send_file(full_path, as_attachment=True)
+        wasabi = get_wasabi_storage()
+        pdf_bytes = wasabi.download_file(doc.file_path)
+
+        # Extract filename from path
+        filename = os.path.basename(doc.file_path)
+
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Download error for doc {doc_id}: {str(e)}")
+        return jsonify({"error": "Не удалось скачать файл"}), 500
