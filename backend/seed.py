@@ -8,6 +8,16 @@ from app.models.user import User
 from app.models.document import Document
 from app.services.storage import get_wasabi_storage
 
+# Замена аббревиатур на читаемые названия
+ABBREVIATION_MAP = {
+    'SHNQ': 'ШНҚ',
+    'shnq': 'ШНҚ',
+    'KMQ': 'КМҚ',
+    'kmq': 'КМҚ',
+    'KR': 'КР',
+    'kr': 'КР',
+}
+
 # Определение категории по коду документа
 CATEGORY_PATTERNS = {
     r"(?i)(2710|3\.01|КМК|SHNQ|ШНК).*строител": "Строительство",
@@ -22,6 +32,59 @@ CATEGORY_PATTERNS = {
     r"(?i)(электр|энерг)": "Электротехника",
     r"(?i)(вод|канализ|водоснаб)": "Водоснабжение и канализация",
 }
+
+
+def create_readable_title(filename):
+    """Создать читаемое название из имени файла."""
+    # Убираем 'documents/' и расширение
+    base_name = os.path.basename(filename)
+    name_without_ext = os.path.splitext(base_name)[0]
+
+    # Заменяем аббревиатуры
+    readable = name_without_ext
+    for abbr, replacement in ABBREVIATION_MAP.items():
+        readable = re.sub(f'\\b{abbr}\\b', replacement, readable, flags=re.IGNORECASE)
+
+    # Заменяем подчеркивания и дефисы на пробелы для лучшей читаемости
+    readable = readable.replace('_', ' ').replace('-', ' ')
+
+    # Убираем множественные пробелы
+    readable = re.sub(r'\s+', ' ', readable).strip()
+
+    return readable
+
+
+def extract_pdf_title(pdf_bytes):
+    """Попытаться извлечь название из PDF."""
+    try:
+        import fitz  # PyMuPDF
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+        # Пробуем получить название из metadata
+        metadata_title = pdf.metadata.get('title', '').strip()
+        if metadata_title and len(metadata_title) > 5:
+            pdf.close()
+            return metadata_title
+
+        # Пробуем извлечь из первой страницы
+        if pdf.page_count > 0:
+            first_page = pdf[0]
+            text = first_page.get_text()
+
+            # Берем первые несколько строк
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+
+            # Ищем подходящую строку (длиннее 10 символов, не слишком длинная)
+            for line in lines[:10]:
+                if 10 < len(line) < 150 and not line.isdigit():
+                    pdf.close()
+                    return line
+
+        pdf.close()
+    except Exception as e:
+        print(f"   ⚠ Не удалось извлечь название из PDF: {e}")
+
+    return None
 
 
 def guess_category(filename):
@@ -91,25 +154,35 @@ def seed():
                 year = extract_year_from_filename(filename)
                 category = guess_category(filename)
 
-                # Проверяем, существует ли документ (по названию или file_path)
-                existing = Document.query.filter_by(title=code).first()
+                # Проверяем, существует ли документ (по file_path)
+                existing = Document.query.filter_by(file_path=filename).first()
                 if existing:
-                    print(f"   ⏭ Пропущен (уже есть): {code}")
+                    print(f"   ⏭ Пропущен (уже есть): {filename}")
                     continue
 
                 print(f"   📄 Обработка: {filename}")
 
-                # Скачиваем PDF чтобы определить количество страниц
+                # Скачиваем PDF чтобы определить количество страниц и название
                 try:
                     pdf_bytes = wasabi.download_file(filename)
                     page_count = get_pdf_page_count(BytesIO(pdf_bytes))
+
+                    # Пытаемся извлечь человекочитаемое название
+                    pdf_title = extract_pdf_title(pdf_bytes)
+                    if pdf_title:
+                        readable_title = pdf_title
+                        print(f"   ✓ Извлечено название из PDF: {readable_title[:50]}...")
+                    else:
+                        readable_title = create_readable_title(filename)
+                        print(f"   ✓ Создано название из файла: {readable_title}")
                 except Exception as e:
                     print(f"   ⚠ Ошибка при скачивании: {e}")
                     page_count = 10  # Значение по умолчанию
+                    readable_title = create_readable_title(filename)
 
                 # Создаем документ (используем поля из модели Document)
                 document = Document(
-                    title=code,  # Document.title (не title_ru)
+                    title=readable_title,  # Человекочитаемое название
                     category=category,
                     pages=page_count,  # Document.pages (не page_count)
                     year=year if year else 2020,  # year обязателен
