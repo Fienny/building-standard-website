@@ -1,81 +1,61 @@
-"""Seed the database with initial documents and an admin user."""
+"""Seed the database with initial documents and an admin user from Wasabi S3."""
 
+import os
+import re
+from io import BytesIO
 from app import create_app, db
 from app.models.user import User
 from app.models.document import Document
+from app.services.wasabi_service import WasabiService
 
-DOCUMENTS = [
-    {
-        "title": "ОзДСт 2710:2019 Строительство. Правила приемки работ",
-        "category": "Строительство",
-        "year": 2019,
-        "pages": 15,
-        "description": "Стандарт устанавливает правила приемки строительных работ.",
-    },
-    {
-        "title": "ОзДСт 8.417:2002 Единицы величин",
-        "category": "Метрология",
-        "year": 2002,
-        "pages": 28,
-        "description": "Настоящий стандарт устанавливает единицы физических величин.",
-    },
-    {
-        "title": "ОзДСт 2.105:2020 Общие требования к текстовым документам",
-        "category": "Документация",
-        "year": 2020,
-        "pages": 32,
-        "description": "Стандарт устанавливает общие требования к текстовым документам.",
-    },
-    {
-        "title": "ОзДСт 21.101:2021 Основные требования к проектной документации",
-        "category": "Проектирование",
-        "year": 2021,
-        "pages": 45,
-        "description": "Стандарт устанавливает основные требования к проектной документации.",
-    },
-    {
-        "title": "ОзДСт 12.0.003:2018 Опасные и вредные производственные факторы",
-        "category": "Безопасность труда",
-        "year": 2018,
-        "pages": 52,
-        "description": "Стандарт устанавливает классификацию опасных производственных факторов.",
-    },
-    {
-        "title": "ОзДСт 34.602:2019 Техническое задание. Требования к содержанию",
-        "category": "ИТ и автоматизация",
-        "year": 2019,
-        "pages": 18,
-        "description": "Стандарт устанавливает требования к содержанию ТЗ.",
-    },
-    {
-        "title": "ОзДСт 30494:2017 Здания жилые и общественные. Параметры микроклимата",
-        "category": "Строительство",
-        "year": 2017,
-        "pages": 24,
-        "description": "Стандарт устанавливает параметры микроклимата в помещениях.",
-    },
-    {
-        "title": "ОзДСт 12.1.003:2020 Шум. Общие требования безопасности",
-        "category": "Безопасность труда",
-        "year": 2020,
-        "pages": 20,
-        "description": "Стандарт устанавливает общие требования по защите от шума.",
-    },
-    {
-        "title": "ОзДСт 2.301:2018 Форматы чертежей",
-        "category": "Документация",
-        "year": 2018,
-        "pages": 8,
-        "description": "Стандарт устанавливает форматы листов чертежей.",
-    },
-    {
-        "title": "ОзДСт 15467:2021 Управление качеством продукции",
-        "category": "Менеджмент качества",
-        "year": 2021,
-        "pages": 16,
-        "description": "Стандарт устанавливает основные понятия управления качеством.",
-    },
-]
+# Определение категории по коду документа
+CATEGORY_PATTERNS = {
+    r"(?i)(2710|3\.01|КМК|SHNQ|ШНК).*строител": "Строительство",
+    r"(?i)(12\.|ОТ|безопасн)": "Безопасность труда",
+    r"(?i)(8\.417|метролог|измерен)": "Метрология",
+    r"(?i)(2\.105|2\.301|документ|черте)": "Документация",
+    r"(?i)(21\.|проект|план)": "Проектирование",
+    r"(?i)(34\.|ит|автомати|техническ.*задан)": "ИТ и автоматизация",
+    r"(?i)(30494|микроклимат|жил)": "Строительство",
+    r"(?i)(15467|качеств|менеджм)": "Менеджмент качества",
+    r"(?i)(материал|бетон|арматур)": "Строительные материалы",
+    r"(?i)(электр|энерг)": "Электротехника",
+    r"(?i)(вод|канализ|водоснаб)": "Водоснабжение и канализация",
+}
+
+
+def guess_category(filename):
+    """Определить категорию по имени файла."""
+    for pattern, category in CATEGORY_PATTERNS.items():
+        if re.search(pattern, filename):
+            return category
+    return "Общие положения"
+
+
+def extract_year_from_filename(filename):
+    """Извлечь год из имени файла (формат: ОзДСт XXXX:2019 или SHNQ-2023)."""
+    year_match = re.search(r"[:\-](\d{4})", filename)
+    if year_match:
+        return int(year_match.group(1))
+    return None
+
+
+def extract_code_from_filename(filename):
+    """Извлечь код документа (до расширения)."""
+    return os.path.splitext(filename)[0]
+
+
+def get_pdf_page_count(pdf_bytes):
+    """Получить количество страниц в PDF."""
+    try:
+        import fitz  # PyMuPDF
+        pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+        page_count = pdf.page_count
+        pdf.close()
+        return page_count
+    except Exception as e:
+        print(f"   ⚠ Не удалось определить количество страниц: {e}")
+        return 10  # Значение по умолчанию
 
 
 def seed():
@@ -90,15 +70,68 @@ def seed():
             db.session.add(admin)
             print("+ Создан администратор: admin@standards.uz / admin123")
 
-        # Documents
-        for d in DOCUMENTS:
-            exists = Document.query.filter_by(title=d["title"]).first()
-            if not exists:
-                db.session.add(Document(**d))
-                print(f"+ Документ: {d['title']}")
+        # Load documents from Wasabi S3
+        wasabi = WasabiService()
+        print("\n🔍 Загрузка документов из Wasabi S3...")
 
-        db.session.commit()
-        print("\nГотово! Seed завершен.")
+        try:
+            s3_files = wasabi.list_files()
+            print(f"   Найдено файлов в S3: {len(s3_files)}")
+
+            added_count = 0
+            for s3_file in s3_files:
+                filename = s3_file['Key']
+
+                # Пропускаем не-PDF файлы
+                if not filename.lower().endswith('.pdf'):
+                    continue
+
+                # Извлекаем метаданные
+                code = extract_code_from_filename(filename)
+                year = extract_year_from_filename(filename)
+                category = guess_category(filename)
+
+                # Проверяем, существует ли документ
+                existing = Document.query.filter_by(code=code).first()
+                if existing:
+                    print(f"   ⏭ Пропущен (уже есть): {code}")
+                    continue
+
+                print(f"   📄 Обработка: {filename}")
+
+                # Скачиваем PDF чтобы определить количество страниц
+                try:
+                    pdf_bytes = wasabi.download_file(filename)
+                    page_count = get_pdf_page_count(BytesIO(pdf_bytes))
+                except Exception as e:
+                    print(f"   ⚠ Ошибка при скачивании: {e}")
+                    page_count = 10  # Значение по умолчанию
+
+                # Создаем документ
+                document = Document(
+                    code=code,
+                    title_ru=code,  # Можно улучшить, парсив имя файла
+                    category=category,
+                    page_count=page_count,
+                    year=year,
+                    language='ru',
+                    file_path=filename,
+                    wasabi_key=filename,
+                    file_size=s3_file.get('Size', 0),
+                    description=f"Государственный стандарт {code}"
+                )
+
+                db.session.add(document)
+                print(f"   ✅ Добавлен: {code} ({page_count} стр, {category})")
+                added_count += 1
+
+            db.session.commit()
+            print(f"\n✅ Готово! Добавлено документов: {added_count}")
+
+        except Exception as e:
+            print(f"\n❌ Ошибка при загрузке из Wasabi: {e}")
+            print("   Создаем базу данных без документов...")
+            db.session.commit()
 
 
 if __name__ == "__main__":

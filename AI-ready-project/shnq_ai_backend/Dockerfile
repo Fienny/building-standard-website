@@ -18,7 +18,9 @@ RUN pip install --no-cache-dir \
     django-cors-headers \
     openai \
     python-dotenv \
-    django-jazzmin
+    django-jazzmin \
+    requests \
+    psycopg2-binary
 
 # Копируем код приложения
 COPY . .
