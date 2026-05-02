@@ -91,8 +91,8 @@ def seed():
                 year = extract_year_from_filename(filename)
                 category = guess_category(filename)
 
-                # Проверяем, существует ли документ
-                existing = Document.query.filter_by(code=code).first()
+                # Проверяем, существует ли документ (по названию или file_path)
+                existing = Document.query.filter_by(title=code).first()
                 if existing:
                     print(f"   ⏭ Пропущен (уже есть): {code}")
                     continue
@@ -107,17 +107,13 @@ def seed():
                     print(f"   ⚠ Ошибка при скачивании: {e}")
                     page_count = 10  # Значение по умолчанию
 
-                # Создаем документ
+                # Создаем документ (используем поля из модели Document)
                 document = Document(
-                    code=code,
-                    title_ru=code,  # Можно улучшить, парсив имя файла
+                    title=code,  # Document.title (не title_ru)
                     category=category,
-                    page_count=page_count,
-                    year=year,
-                    language='ru',
+                    pages=page_count,  # Document.pages (не page_count)
+                    year=year if year else 2020,  # year обязателен
                     file_path=filename,
-                    wasabi_key=filename,
-                    file_size=s3_file.get('Size', 0),
                     description=f"Государственный стандарт {code}"
                 )
 
