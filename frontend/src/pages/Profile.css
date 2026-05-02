@@ -1,0 +1,164 @@
+.profile-page {
+  min-height: 100vh;
+  padding: 2rem 0;
+  background: linear-gradient(135deg, #1a1f2e 0%, #2d3548 100%);
+}
+
+.profile-header {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-header h1 {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.profile-info {
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.profile-info p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.profile-info strong {
+  color: #10b981;
+  margin-right: 0.5rem;
+}
+
+.purchases-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.purchases-section h2 {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.empty-state p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.purchases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.purchase-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  transition: all 0.2s;
+}
+
+.purchase-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.purchase-info {
+  flex: 1;
+}
+
+.purchase-info h3 {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.purchase-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.purchase-meta span {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.purchase-meta .category {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.purchase-price {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.purchase-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.purchase-actions .btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-info {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .purchase-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .purchase-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .purchase-actions .btn {
+    width: 100%;
+  }
+}

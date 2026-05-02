@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Documents from './pages/Documents';
 import DocumentPreview from './pages/DocumentPreview';
+import Profile from './pages/Profile';
 import './App.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/documents/:id" element={<DocumentPreview />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </div>
       </AuthProvider>
