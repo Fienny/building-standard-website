@@ -6,7 +6,7 @@ from io import BytesIO
 from app import create_app, db
 from app.models.user import User
 from app.models.document import Document
-from app.services.wasabi_service import WasabiService
+from app.services.storage import get_wasabi_storage
 
 # Определение категории по коду документа
 CATEGORY_PATTERNS = {
@@ -71,7 +71,7 @@ def seed():
             print("+ Создан администратор: admin@standards.uz / admin123")
 
         # Load documents from Wasabi S3
-        wasabi = WasabiService()
+        wasabi = get_wasabi_storage()
         print("\n🔍 Загрузка документов из Wasabi S3...")
 
         try:

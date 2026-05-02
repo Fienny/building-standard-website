@@ -155,13 +155,13 @@ class WasabiStorage:
 
     def list_files(self, prefix: str = '') -> list:
         """
-        Список файлов в bucket
+        Список файлов в bucket с полными метаданными
 
         Args:
             prefix: Префикс для фильтрации (например: 'documents/')
 
         Returns:
-            Список имён файлов
+            Список dict с метаданными файлов (Key, Size, LastModified)
         """
         try:
             response = self.s3_client.list_objects_v2(
@@ -170,12 +170,33 @@ class WasabiStorage:
             )
 
             if 'Contents' in response:
-                return [obj['Key'] for obj in response['Contents']]
+                return response['Contents']  # Возвращаем полные объекты
             return []
 
         except ClientError as e:
             logger.error(f"Wasabi list error: {str(e)}")
             return []
+
+    def download_file(self, object_name: str) -> bytes:
+        """
+        Скачивает файл из Wasabi bucket
+
+        Args:
+            object_name: Имя файла в bucket
+
+        Returns:
+            Содержимое файла в виде bytes
+        """
+        try:
+            response = self.s3_client.get_object(
+                Bucket=self.bucket_name,
+                Key=object_name
+            )
+            return response['Body'].read()
+
+        except ClientError as e:
+            logger.error(f"Wasabi download error: {str(e)}")
+            raise
 
 
 def get_wasabi_storage() -> WasabiStorage:
