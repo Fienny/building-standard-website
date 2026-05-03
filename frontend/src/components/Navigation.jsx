@@ -22,7 +22,8 @@ function Navigation() {
             <Link to="/documents" className="nav-link">Документы</Link>
             {user ? (
               <>
-                <Link to="/profile" className="nav-user">{user.name}</Link>
+                <span className="nav-username">{user.name}</span>
+                <Link to="/profile" className="nav-link btn btn-primary">👤 Личный кабинет</Link>
                 <button onClick={handleLogout} className="nav-link btn btn-secondary">Выйти</button>
               </>
             ) : (

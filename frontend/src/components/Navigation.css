@@ -71,14 +71,11 @@
   display: none;
 }
 
-.nav-user {
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 14px;
-  padding: 8px 16px;
-  background: var(--bg-card);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+.nav-username {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 15px;
+  opacity: 0.8;
 }
 
 /* Mobile responsive */
@@ -95,7 +92,7 @@
     font-size: 14px;
   }
 
-  .nav-user {
+  .nav-username {
     display: none;
   }
 }

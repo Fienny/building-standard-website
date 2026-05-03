@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../utils/AuthContext';
 import AIAssistant from '../components/AIAssistant';
 import './Home.css';
 
 function Home() {
+  const { user } = useAuth();
+
   return (
     <div className="home">
       <AIAssistant />
@@ -17,7 +20,7 @@ function Home() {
             </p>
             <div className="hero-buttons">
               <Link to="/documents" className="btn btn-accent">Смотреть документы</Link>
-              <Link to="/signup" className="btn btn-primary">Зарегистрироваться</Link>
+              {!user && <Link to="/signup" className="btn btn-primary">Зарегистрироваться</Link>}
             </div>
           </div>
         </div>
@@ -74,15 +77,17 @@ function Home() {
         </div>
       </section>
 
-      <section className="cta">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Начните работать со стандартами сегодня</h2>
-            <p>Зарегистрируйтесь и получите доступ к полной базе документов</p>
-            <Link to="/signup" className="btn btn-accent">Создать аккаунт</Link>
+      {!user && (
+        <section className="cta">
+          <div className="container">
+            <div className="cta-content">
+              <h2>Начните работать со стандартами сегодня</h2>
+              <p>Зарегистрируйтесь и получите доступ к полной базе документов</p>
+              <Link to="/signup" className="btn btn-accent">Создать аккаунт</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
