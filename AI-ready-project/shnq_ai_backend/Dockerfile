@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Устанавливаем зависимости
-RUN pip install --no-cache-dir \
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     django \
     djangorestframework \
     django-cors-headers \

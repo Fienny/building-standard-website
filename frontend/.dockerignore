@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build
-dist/
+# dist/ - needed for Docker copy
 build/
 
 # IDEs
