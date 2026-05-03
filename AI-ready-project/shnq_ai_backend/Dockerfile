@@ -20,7 +20,10 @@ RUN pip install --no-cache-dir \
     python-dotenv \
     django-jazzmin \
     requests \
-    psycopg2-binary
+    psycopg2-binary \
+    dj-database-url \
+    qdrant-client \
+    sentence-transformers
 
 # Копируем код приложения
 COPY . .
