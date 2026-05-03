@@ -25,7 +25,14 @@ I18N_COLUMNS = {
 def ensure_normtable_i18n_columns():
     table_name = "app_shnq_normtable"
     with connection.cursor() as cursor:
-        cols = {row[1] for row in cursor.execute(f"PRAGMA table_info({table_name})").fetchall()}
+        # PostgreSQL-compatible column check
+        cursor.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = %s
+        """, [table_name])
+        cols = {row[0] for row in cursor.fetchall()}
+
         for col_name, col_type in I18N_COLUMNS.items():
             if col_name in cols:
                 continue
