@@ -82,6 +82,8 @@ services:
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      - EMBED_BACKEND=${EMBED_BACKEND:-local}
+      - DEEPSEEK_EMBED_MODEL=${DEEPSEEK_EMBED_MODEL:-paraphrase-multilingual-MiniLM-L12-v2}
       - DATABASE_URL=postgresql://standards_user:${DB_PASSWORD:-change_this_password}@postgres:5432/standards_ai_db
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
