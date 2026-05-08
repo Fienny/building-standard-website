@@ -125,7 +125,7 @@ def get_pdf_page_count(pdf_bytes):
         return 10  # Значение по умолчанию
 
 
-def sync_to_ai_backend(document, pdf_bytes):
+def sync_to_ai_backend(document, pdf_bytes, code):
     """Синхронизировать документ с AI backend."""
     try:
         files = {
@@ -134,6 +134,7 @@ def sync_to_ai_backend(document, pdf_bytes):
         data = {
             'document_id': str(document.id),
             'title': document.title,
+            'code': code,  # Добавляем code - обязательное поле
             'category': document.category,
             'year': document.year,
             'file_path': document.file_path,
@@ -232,7 +233,7 @@ def seed():
                 print(f"   ✅ Добавлен: {code} ({page_count} стр, {category})")
 
                 # AUTO-SYNC с AI backend
-                sync_to_ai_backend(document, pdf_bytes)
+                sync_to_ai_backend(document, pdf_bytes, code)
 
                 added_count += 1
 

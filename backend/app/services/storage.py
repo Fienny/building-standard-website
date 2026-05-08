@@ -6,6 +6,10 @@ import boto3
 from botocore.exceptions import ClientError
 from typing import Optional, BinaryIO
 import logging
+import urllib3
+
+# Отключаем SSL warnings для Docker среды
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +31,15 @@ class WasabiStorage:
         self.endpoint_url = f'https://s3.{region}.wasabisys.com'
 
         # Инициализация S3 client
+        # WORKAROUND: Отключаем SSL verification для Docker среды
+        # В production использовать verify=True с правильными сертификатами
         self.s3_client = boto3.client(
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             endpoint_url=self.endpoint_url,
-            region_name=region
+            region_name=region,
+            verify=False  # Отключаем SSL verification
         )
 
         logger.info(f"Wasabi storage initialized: bucket={bucket_name}, region={region}")

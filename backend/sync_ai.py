@@ -11,6 +11,10 @@ AI_BACKEND_URL = "http://ai-backend:8000"  # Внутри Docker сети
 def sync_document_to_ai(document, pdf_bytes):
     """Отправить один документ в AI backend."""
     try:
+        # Генерируем code из file_path
+        import os
+        code = os.path.splitext(os.path.basename(document.file_path))[0] if document.file_path else str(document.id)
+
         # Отправляем PDF файл в Django AI backend
         files = {
             'file': (f'{document.id}.pdf', pdf_bytes, 'application/pdf')
@@ -18,13 +22,14 @@ def sync_document_to_ai(document, pdf_bytes):
         data = {
             'document_id': document.id,
             'title': document.title,
+            'code': code,
             'category': document.category,
             'year': document.year,
             'file_path': document.file_path,
         }
 
         response = requests.post(
-            f"{AI_BACKEND_URL}/api/documents/upload",
+            f"{AI_BACKEND_URL}/api/sync-document/",  # Правильный endpoint с trailing slash
             files=files,
             data=data,
             timeout=300  # 5 минут на обработку одного документа
