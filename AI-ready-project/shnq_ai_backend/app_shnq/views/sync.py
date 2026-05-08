@@ -7,10 +7,62 @@ from rest_framework.response import Response
 from django.core.files.base import ContentFile
 import requests
 import logging
+import fitz  # PyMuPDF
+import re
 
-from ..models import Document, Category
+from ..models import Document, Category, Clause
+from ..embeddings import upsert_clause_embeddings
 
 logger = logging.getLogger(__name__)
+
+
+def parse_pdf_and_create_clauses(document):
+    """
+    Простой парсер PDF - извлекает текст и создает Clause записи.
+    Потом автоматически создаются embeddings.
+    """
+    try:
+        # Открываем PDF
+        pdf_path = document.original_file.path
+        pdf = fitz.open(pdf_path)
+
+        clauses_created = 0
+
+        # Простая логика: каждая страница = один Clause
+        for page_num in range(min(pdf.page_count, 50)):  # Ограничим 50 страницами для начала
+            page = pdf[page_num]
+            text = page.get_text()
+
+            # Пропускаем пустые страницы
+            if not text.strip() or len(text.strip()) < 50:
+                continue
+
+            # Ищем номера пунктов (например "5.1", "6.2.3")
+            clause_numbers = re.findall(r'\b\d+\.\d+(?:\.\d+)?\b', text[:500])
+            clause_number = clause_numbers[0] if clause_numbers else f"page_{page_num+1}"
+
+            # Создаем Clause
+            Clause.objects.create(
+                document=document,
+                clause_number=clause_number,
+                text=text[:2000]  # Ограничим длину для embeddings
+            )
+            clauses_created += 1
+
+        pdf.close()
+
+        logger.info(f"Created {clauses_created} clauses for document {document.code}")
+
+        # AUTO-CREATE EMBEDDINGS
+        if clauses_created > 0:
+            result = upsert_clause_embeddings()
+            logger.info(f"Embeddings created: {result}")
+
+        return clauses_created
+
+    except Exception as e:
+        logger.error(f"Failed to parse PDF: {e}", exc_info=True)
+        return 0
 
 
 @api_view(['POST'])
@@ -19,36 +71,45 @@ def sync_document(request):
     Принимает документ от Flask backend и обрабатывает его
 
     POST /api/sync-document/
-    {
-        "document_id": 123,
-        "title": "SHNQ 2.01.01-22",
-        "code": "SHNQ 2.01.01-22",
-        "category": "Строительство",
-        "year": 2022,
-        "file_path": "SHNQ_2.01.01-22.pdf",
-        "file_url": "http://flask-backend:5000/uploads/documents/SHNQ_2.01.01-22.pdf",
-        "pages": 45
-    }
+    Multipart form-data:
+        - file: PDF file
+        - document_id: Flask document ID
+        - title: Document title
+        - category: Category name
+        - year: Publication year
+        - file_path: Original filename
     """
     try:
-        # Извлекаем данные
+        # Извлекаем данные из form-data
         document_id = request.data.get('document_id')
         title = request.data.get('title')
-        code = request.data.get('code')
         category_name = request.data.get('category', 'SHNQ')
         year = request.data.get('year')
         file_path = request.data.get('file_path')
-        file_url = request.data.get('file_url')
-        pages = request.data.get('pages', 0)
+
+        # PDF file из request.FILES
+        pdf_file = request.FILES.get('file')
+
+        # Генерируем code из file_path если не передан
+        code = request.data.get('code')
+        if not code and file_path:
+            import os
+            code = os.path.splitext(os.path.basename(file_path))[0]
 
         # Валидация
-        if not all([title, code, file_path]):
+        if not all([title, code]):
             return Response(
-                {'error': 'Missing required fields: title, code, file_path'},
+                {'error': 'Missing required fields: title, code'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        logger.info(f"sync_document: {code} ({pages} pages)")
+        if not pdf_file:
+            return Response(
+                {'error': 'PDF file is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        logger.info(f"sync_document: {code} - {title}")
 
         # Проверяем дубликат
         existing = Document.objects.filter(code=code).first()
@@ -66,33 +127,27 @@ def sync_document(request):
             defaults={'name': category_name}
         )
 
-        # Скачиваем PDF файл (если передан file_url)
-        pdf_file = None
-        if file_url:
-            try:
-                response = requests.get(file_url, timeout=30)
-                if response.status_code == 200:
-                    pdf_file = ContentFile(response.content, name=file_path)
-            except Exception as e:
-                logger.warning(f"Failed to download PDF: {e}")
-
         # Создаём документ
         document = Document.objects.create(
             category=category,
             title=title,
             code=code,
+            lex_url=f"https://lex.uz/docs/{code}"  # placeholder
         )
 
         # Сохраняем PDF файл
         if pdf_file:
-            document.original_file.save(file_path, pdf_file, save=True)
+            document.original_file.save(file_path or f"{code}.pdf", pdf_file, save=True)
 
         logger.info(f"Document {code} created successfully")
 
-        # TODO: Запустить парсинг PDF и создание embeddings
-        # Это будет фоновая задача (Celery или встроенный скрипт)
-        # from ..tasks import process_document_async
-        # process_document_async.delay(document.id)
+        # AUTO-PROCESS: Парсим PDF и создаем embeddings
+        try:
+            clauses_count = parse_pdf_and_create_clauses(document)
+            logger.info(f"Document {code} parsed: {clauses_count} clauses with embeddings")
+        except Exception as e:
+            logger.error(f"Failed to parse PDF: {e}", exc_info=True)
+            # Не падаем - документ уже создан
 
         return Response({
             'status': 'success',

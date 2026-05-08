@@ -2,11 +2,15 @@
 
 import os
 import re
+import requests
 from io import BytesIO
 from app import create_app, db
 from app.models.user import User
 from app.models.document import Document
 from app.services.storage import get_wasabi_storage
+
+# AI Backend URL для синхронизации
+AI_BACKEND_URL = os.getenv('AI_BACKEND_URL', 'http://ai-backend:8000')
 
 # Замена аббревиатур на читаемые названия
 ABBREVIATION_MAP = {
@@ -121,6 +125,39 @@ def get_pdf_page_count(pdf_bytes):
         return 10  # Значение по умолчанию
 
 
+def sync_to_ai_backend(document, pdf_bytes):
+    """Синхронизировать документ с AI backend."""
+    try:
+        files = {
+            'file': (f'{document.id}.pdf', pdf_bytes, 'application/pdf')
+        }
+        data = {
+            'document_id': str(document.id),
+            'title': document.title,
+            'category': document.category,
+            'year': document.year,
+            'file_path': document.file_path,
+        }
+
+        response = requests.post(
+            f"{AI_BACKEND_URL}/api/sync-document/",
+            files=files,
+            data=data,
+            timeout=300
+        )
+
+        if response.status_code in [200, 201]:
+            print(f"      ✅ Синхронизирован с AI backend")
+            return True
+        else:
+            print(f"      ⚠ AI sync error: {response.status_code} - {response.text[:100]}")
+            return False
+
+    except Exception as e:
+        print(f"      ⚠ AI sync failed: {e}")
+        return False
+
+
 def seed():
     app = create_app()
     with app.app_context():
@@ -191,7 +228,12 @@ def seed():
                 )
 
                 db.session.add(document)
+                db.session.flush()  # Получить ID документа
                 print(f"   ✅ Добавлен: {code} ({page_count} стр, {category})")
+
+                # AUTO-SYNC с AI backend
+                sync_to_ai_backend(document, pdf_bytes)
+
                 added_count += 1
 
             db.session.commit()
